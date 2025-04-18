@@ -8,6 +8,7 @@ const signupForm = document.getElementById('signup-form');
 const loginForm = document.getElementById('login-form');
 const toggleAuthButton = document.getElementById('toggle-auth');
 const guestPlayButton = document.getElementById('guest-play');
+const googleSignInButton = document.getElementById('google-signin');
 const logoutButton = document.getElementById('logout-button');
 const authMessage = document.getElementById('auth-message');
 
@@ -54,6 +55,28 @@ async function login(email, password) {
         showAuthMessage('An error occurred during login.');
         console.error('Login error:', error);
         return null;
+    }
+}
+
+// Google sign in function
+async function signInWithGoogle() {
+    try {
+        showAuthMessage('Connecting to Google...');
+        
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin
+            }
+        });
+
+        if (error) {
+            showAuthMessage(error.message);
+            console.error('Google sign-in error:', error);
+        }
+    } catch (error) {
+        showAuthMessage('Failed to connect to Google.');
+        console.error('Google sign-in error:', error);
     }
 }
 
@@ -193,6 +216,10 @@ function initEventListeners() {
         toggleAuthButton.addEventListener('click', toggleAuthMode);
     }
 
+    if (googleSignInButton) {
+        googleSignInButton.addEventListener('click', signInWithGoogle);
+    }
+
     if (guestPlayButton) {
         guestPlayButton.addEventListener('click', () => {
             console.log('Guest play button clicked');
@@ -212,11 +239,25 @@ function initEventListeners() {
     }
 }
 
+// Handle OAuth redirects
+async function handleAuthRedirect() {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (data && data.session) {
+        // User has been redirected and authenticated successfully
+        currentUser = data.session.user;
+        showGameContainer(currentUser);
+    }
+}
+
 // Check session on page load
 window.addEventListener('DOMContentLoaded', async () => {
     console.log('DOM Content Loaded');
     // Initialize event listeners
     initEventListeners();
+    
+    // Check if this is a redirect from OAuth
+    await handleAuthRedirect();
     
     // Check if user is already logged in
     const user = await checkUserSession();

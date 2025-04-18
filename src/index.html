@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake.io Game</title>
     <link rel="stylesheet" href="./css/style.css">
+    <!-- Add Google icons for the sign-in button -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
     <div id="auth-container">
@@ -25,6 +27,16 @@
                 </div>
                 <p id="auth-message"></p>
                 <button id="toggle-auth">Switch to Login</button>
+                
+                <!-- Google Auth Button -->
+                <div class="social-auth-divider">
+                    <span>or</span>
+                </div>
+                <button id="google-signin" class="google-btn">
+                    <span class="google-icon"></span>
+                    <span>Continue with Google</span>
+                </button>
+                
                 <button id="guest-play" onclick="window.playAsGuest()">Play as Guest</button>
             </div>
         </div>
