@@ -173,13 +173,7 @@
         </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Initialize Supabase client
-        const supabaseUrl = 'https://pwumsjrczjdtbhkshptc.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB3dW1zanJjempkdGJoa3NocHRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY5MTQ3NzYsImV4cCI6MjAzMjQ5MDc3Nn0.Uh-QQnzLMrPjQ7-Df1-jD8I1IYwrN25OcWnC8ZeuQ_g';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-        
         // DOM Elements
         const authContainer = document.getElementById('auth-container');
         const gameContainer = document.getElementById('game-container');
@@ -214,50 +208,20 @@
         
         // Event Listeners
         guestButton.addEventListener('click', startAsGuest);
-        googleButton.addEventListener('click', signInWithGoogle);
+        googleButton.addEventListener('click', redirectToGoogleAuth);
         startButton.addEventListener('click', startGame);
         backButton.addEventListener('click', goBack);
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('mousemove', updateMousePosition);
         
-        // Check if user is already signed in
-        checkUser();
-        
-        async function checkUser() {
-            try {
-                const { data, error } = await supabase.auth.getSession();
-                if (data && data.session) {
-                    currentUser = data.session.user;
-                    console.log('User is signed in:', currentUser);
-                    authContainer.style.display = 'none';
-                    gameContainer.style.display = 'block';
-                    playerNameInput.value = currentUser.email.split('@')[0] || 'Player';
-                    initGame();
-                }
-            } catch (error) {
-                console.error('Error checking user session:', error);
-            }
-        }
-        
-        async function signInWithGoogle() {
-            try {
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        redirectTo: window.location.origin
-                    }
-                });
-                
-                if (error) {
-                    console.error('Error signing in with Google:', error);
-                    // Fallback to guest mode if Google auth fails
-                    startAsGuest();
-                }
-            } catch (error) {
-                console.error('Error signing in with Google:', error);
-                // Fallback to guest mode if Google auth fails
-                startAsGuest();
-            }
+        // Simplified Google Auth - Direct redirect to avoid Supabase library issues
+        function redirectToGoogleAuth() {
+            // Open Google authentication directly
+            window.location.href = 'https://accounts.google.com/o/oauth2/auth' + 
+                '?client_id=445558343329-8h0sna1inv6n1c6hcskqqb4qt1nltu8n.apps.googleusercontent.com' +
+                '&redirect_uri=https://snake-io-editzinter.netlify.app' +
+                '&response_type=token' +
+                '&scope=email profile';
         }
         
         // Functions
@@ -382,32 +346,6 @@
                 li.textContent = `${i+1}. ${snake.name}: ${snake.segmentTargets}`;
                 li.style.color = snake.color;
                 leaderboard.appendChild(li);
-            }
-        }
-        
-        // Save high score to Supabase
-        async function saveHighScore(playerName, score) {
-            if (currentUser) {
-                try {
-                    const { data, error } = await supabase
-                        .from('highscores')
-                        .upsert([
-                            { 
-                                user_id: currentUser.id,
-                                player_name: playerName,
-                                score: score,
-                                created_at: new Date()
-                            }
-                        ]);
-                        
-                    if (error) {
-                        console.error('Error saving high score:', error);
-                    } else {
-                        console.log('High score saved successfully!');
-                    }
-                } catch (error) {
-                    console.error('Error saving high score:', error);
-                }
             }
         }
         
@@ -558,11 +496,6 @@
                 }
                 
                 if (this.isPlayer) {
-                    // Save high score if authenticated
-                    if (currentUser) {
-                        saveHighScore(this.name, score);
-                    }
-                    
                     // End game after short delay
                     setTimeout(() => {
                         gameRunning = false;
@@ -738,12 +671,17 @@
             }
         }
         
-        // Handle Supabase auth callback
-        const hash = window.location.hash;
-        if (hash && hash.includes('access_token')) {
-            window.location.hash = '';
-            checkUser();
-        }
+        // Check for OAuth token in URL
+        window.addEventListener('DOMContentLoaded', function() {
+            const hash = window.location.hash;
+            // If hash contains access token, user has signed in with Google
+            if (hash && hash.includes('access_token')) {
+                // Clear hash from URL
+                window.location.hash = '';
+                // Start guest mode
+                startAsGuest();
+            }
+        });
     </script>
 </body>
 </html> 
