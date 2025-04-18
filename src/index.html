@@ -31,7 +31,7 @@
         // Backup function that runs when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Setting up guest play fallback handler');
-            var guestPlayBtn = document.getElementById('guest-play');
+            var guestPlayBtn = document.getElementById('playAsGuest');
             if (guestPlayBtn) {
                 guestPlayBtn.onclick = function(e) {
                     if (e) e.preventDefault();
@@ -39,25 +39,6 @@
                     directPlayAsGuest();
                     return false;
                 };
-            }
-        });
-    </script>
-    <!-- Include Supabase directly -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <!-- Initialize Supabase globally -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize Supabase client globally
-            const supabaseUrl = 'https://fqcvrfbaivbozlgqafw.supabase.co';
-            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY3ZyZmJhaXZib3psZ3FhZnciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcxMzg5MzU5MiwiZXhwIjoyMDI5NDY5NTkyfQ.lWrETfMgHE9QMBHXgXvxY9qDd2bVszQa1E0xEQD9E_I';
-            
-            try {
-                if (window.supabase && window.supabase.createClient) {
-                    window.supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-                    console.log('Supabase client initialized globally');
-                }
-            } catch (error) {
-                console.error('Failed to initialize Supabase client:', error);
             }
         });
     </script>
@@ -106,9 +87,6 @@
         </div>
         <button id="show-highscores">Highscores</button>
     </div>
-    
-    <!-- Non-module specific scripts -->
-    <script src="./js/google-auth.js"></script>
     
     <!-- Module scripts -->
     <script src="./js/supabase.js" type="module"></script>

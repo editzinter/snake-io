@@ -5,43 +5,84 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = 'https://fqcvrfbaivbozlgqafw.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY3ZyZmJhaXZib3psZ3FhZnciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcxMzg5MzU5MiwiZXhwIjoyMDI5NDY5NTkyfQ.lWrETfMgHE9QMBHXgXvxY9qDd2bVszQa1E0xEQD9E_I';
 
+// Debug configuration
+console.log('Supabase configuration:', { 
+    url: supabaseUrl,
+    keyLength: supabaseAnonKey ? supabaseAnonKey.length : 0
+});
+
 // Check if we're in a secure context
 const isSecureContext = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+console.log('Is secure context:', isSecureContext, 'Hostname:', window.location.hostname);
 
 if (!isSecureContext) {
     console.warn('Warning: Running in an insecure context. Some authentication features may not work. Please use HTTPS or localhost.');
 }
 
 // Initialize Supabase client with additional options
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true
+let supabase;
+try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Supabase URL or key is undefined');
     }
-});
-
-// Log initialization
-console.log('Supabase client initialized in module');
+    
+    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: true
+        }
+    });
+    
+    // Test that supabase was initialized correctly
+    if (!supabase || !supabase.auth) {
+        throw new Error('Supabase client was not initialized correctly');
+    }
+    
+    console.log('Supabase client initialized successfully in module');
+} catch (error) {
+    console.error('Error initializing Supabase client:', error);
+    // Create a fallback client to avoid breaking the app
+    supabase = {
+        auth: {
+            signUp: () => ({ error: { message: 'Supabase client initialization failed' } }),
+            signInWithPassword: () => ({ error: { message: 'Supabase client initialization failed' } }),
+            signInWithOAuth: () => ({ error: { message: 'Supabase client initialization failed' } }),
+            signOut: () => ({ error: { message: 'Supabase client initialization failed' } }),
+            getSession: () => ({ error: { message: 'Supabase client initialization failed' } }),
+            onAuthStateChange: () => {}
+        },
+        from: () => ({
+            select: () => ({
+                eq: () => ({
+                    single: () => ({ error: { message: 'Supabase client initialization failed' } })
+                })
+            })
+        })
+    };
+}
 
 // Make it available globally for non-module scripts
 if (typeof window !== 'undefined') {
-    // Create a proxy to catch initialization errors
-    const supabaseProxy = new Proxy(supabase, {
-        get: function(target, prop) {
-            if (prop === 'auth' && !isSecureContext) {
-                console.error('Authentication features are not available in insecure contexts. Please use HTTPS or localhost.');
+    try {
+        // Create a proxy to catch initialization errors
+        const supabaseProxy = new Proxy(supabase, {
+            get: function(target, prop) {
+                if (prop === 'auth' && !isSecureContext) {
+                    console.error('Authentication features are not available in insecure contexts. Please use HTTPS or localhost.');
+                }
+                return target[prop];
             }
-            return target[prop];
-        }
-    });
+        });
 
-    window.supabaseModule = supabaseProxy;
-    
-    // Check if global supabase is not already initialized
-    if (!window.supabase) {
-        window.supabase = supabaseProxy;
-        console.log('Supabase also exposed globally from module');
+        window.supabaseModule = supabaseProxy;
+        
+        // We no longer set window.supabase here since we removed the CDN version
+        // and we rely on the ES module system
+        
+        console.log('Supabase exposed as window.supabaseModule');
+    } catch (error) {
+        console.error('Error making Supabase available globally:', error);
     }
 }
 

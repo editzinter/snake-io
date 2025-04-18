@@ -18,6 +18,22 @@ const passwordInput = document.getElementById('password');
 let isLoginMode = true;
 let currentUser = null;
 
+// Debug info
+console.log('Auth module loaded');
+console.log('DOM Elements:', {
+    authContainer: !!authContainer,
+    gameContainer: !!gameContainer,
+    authForm: !!authForm,
+    toggleAuthButton: !!toggleAuthButton,
+    playAsGuestButton: !!playAsGuestButton,
+    googleSignInButton: !!googleSignInButton,
+    submitAuthButton: !!submitAuthButton,
+    logoutButton: !!logoutButton,
+    authMessage: !!authMessage,
+    emailInput: !!emailInput,
+    passwordInput: !!passwordInput
+});
+
 // Error handling utility
 function handleAuthError(error, defaultMessage = 'An error occurred') {
     console.error('Auth error:', error);
@@ -39,6 +55,7 @@ function handleAuthError(error, defaultMessage = 'An error occurred') {
 // Sign up function
 async function signUp(email, password) {
     try {
+        console.log('Attempting sign up with email:', email);
         if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
             throw new Error('Signup requires a secure context (HTTPS or localhost)');
         }
@@ -52,6 +69,7 @@ async function signUp(email, password) {
         });
 
         if (error) throw error;
+        console.log('Sign up successful:', data.user);
         return data.user;
     } catch (error) {
         handleAuthError(error, 'An error occurred during sign up.');
@@ -62,6 +80,7 @@ async function signUp(email, password) {
 // Login function
 async function login(email, password) {
     try {
+        console.log('Attempting login with email:', email);
         if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
             throw new Error('Login requires a secure context (HTTPS or localhost)');
         }
@@ -72,6 +91,7 @@ async function login(email, password) {
         });
 
         if (error) throw error;
+        console.log('Login successful:', data.user);
         return data.user;
     } catch (error) {
         handleAuthError(error, 'An error occurred during login.');
@@ -82,21 +102,29 @@ async function login(email, password) {
 // Google sign in function
 async function signInWithGoogle() {
     try {
+        console.log('Attempting Google sign-in');
         if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
             throw new Error('Google sign-in requires a secure context (HTTPS or localhost)');
         }
 
-        showAuthMessage('Connecting to Google...');
+        showAuthMessage('Connecting to Google...', 'info');
+        
+        // Get the current URL for the redirect
+        const redirectUrl = window.location.origin;
+        console.log('Redirect URL:', redirectUrl);
         
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin
+                redirectTo: redirectUrl
             }
         });
 
+        console.log('Google sign-in response:', data);
+        
         if (error) throw error;
     } catch (error) {
+        console.error('Google sign-in error:', error);
         handleAuthError(error, 'Failed to connect to Google.');
     }
 }
@@ -104,8 +132,10 @@ async function signInWithGoogle() {
 // Logout function
 async function logout() {
     try {
+        console.log('Attempting logout');
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        console.log('Logout successful');
         return true;
     } catch (error) {
         handleAuthError(error, 'Logout error');
@@ -116,9 +146,13 @@ async function logout() {
 // Check if user is logged in
 async function checkUserSession() {
     try {
+        console.log('Checking user session');
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        return data && data.session && data.session.user ? data.session.user : null;
+        
+        const user = data && data.session && data.session.user ? data.session.user : null;
+        console.log('Current user session:', user);
+        return user;
     } catch (error) {
         handleAuthError(error, 'Session check error');
         return null;
@@ -129,6 +163,7 @@ async function checkUserSession() {
 function showAuthMessage(message, type = 'error') {
     if (!authMessage) return;
     
+    console.log(`Auth message (${type}):`, message);
     authMessage.textContent = message;
     authMessage.className = `auth-message ${type}`;
     
@@ -146,6 +181,8 @@ function showAuthMessage(message, type = 'error') {
 
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
+    console.log('Toggling auth mode. Is login mode now:', isLoginMode);
+    
     if (isLoginMode) {
         submitAuthButton.textContent = 'Sign In';
         toggleAuthButton.textContent = 'Switch to Sign Up';
@@ -168,6 +205,7 @@ function showGameContainer(user) {
         return;
     }
 
+    console.log('Showing game container for user:', user);
     currentUser = user;
     authContainer.classList.add('hidden');
     gameContainer.classList.remove('hidden');
@@ -182,6 +220,7 @@ function showGameContainer(user) {
 
 async function loadUserProfile(userId) {
     try {
+        console.log('Loading user profile for ID:', userId);
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -191,6 +230,7 @@ async function loadUserProfile(userId) {
         if (error) throw error;
         
         if (data) {
+            console.log('User profile loaded:', data);
             const playerNameInput = document.getElementById('playerName');
             if (playerNameInput) {
                 playerNameInput.value = data.username || '';
@@ -203,6 +243,8 @@ async function loadUserProfile(userId) {
 
 // Function to initialize all event listeners
 function initEventListeners() {
+    console.log('Initializing auth event listeners');
+    
     // Auth form submission
     if (authForm) {
         authForm.addEventListener('submit', async (event) => {
@@ -265,6 +307,8 @@ function initEventListeners() {
 // Initialize auth state
 async function initAuth() {
     try {
+        console.log('Initializing auth system');
+        
         // Check for existing session
         const user = await checkUserSession();
         if (user) {
@@ -273,6 +317,8 @@ async function initAuth() {
         
         // Set up auth state change listener
         supabase.auth.onAuthStateChange((event, session) => {
+            console.log('Auth state changed:', event, session ? !!session.user : null);
+            
             if (event === 'SIGNED_IN' && session && session.user) {
                 showGameContainer(session.user);
             } else if (event === 'SIGNED_OUT') {
@@ -286,7 +332,9 @@ async function initAuth() {
 
         // Initialize event listeners
         initEventListeners();
+        console.log('Auth system initialized successfully');
     } catch (error) {
+        console.error('Error during auth initialization:', error);
         handleAuthError(error, 'Error initializing auth');
     }
 }
