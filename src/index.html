@@ -7,17 +7,60 @@
     <link rel="stylesheet" href="./css/style.css">
     <!-- Add Google icons for the sign-in button -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Debug script to capture errors -->
+    <script src="./js/debug.js"></script>
     <script>
         // Globally available direct function to play as guest
         function directPlayAsGuest() {
             console.log('Direct play as guest function called');
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('game-container').classList.remove('hidden');
+            var authContainer = document.getElementById('auth-container');
+            var gameContainer = document.getElementById('game-container');
+            
+            if (authContainer && gameContainer) {
+                authContainer.classList.add('hidden');
+                gameContainer.classList.remove('hidden');
+                console.log('Game container shown and auth hidden via direct function');
+            } else {
+                console.error('Could not find containers:', 
+                             authContainer ? 'auth found' : 'auth missing', 
+                             gameContainer ? 'game found' : 'game missing');
+            }
             return false; // Prevent default form submission
         }
+        
+        // Backup function that runs when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up guest play fallback handler');
+            var guestPlayBtn = document.getElementById('guest-play');
+            if (guestPlayBtn) {
+                guestPlayBtn.onclick = function(e) {
+                    if (e) e.preventDefault();
+                    console.log('Guest play clicked (DOM loaded handler)');
+                    directPlayAsGuest();
+                    return false;
+                };
+            }
+        });
     </script>
     <!-- Include Supabase directly -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <!-- Initialize Supabase globally -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Supabase client globally
+            const supabaseUrl = 'https://fqcvrfbaivbozlgqafw.supabase.co';
+            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY3ZyZmJhaXZib3psZ3FhZnciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcxMzg5MzU5MiwiZXhwIjoyMDI5NDY5NTkyfQ.lWrETfMgHE9QMBHXgXvxY9qDd2bVszQa1E0xEQD9E_I';
+            
+            try {
+                if (window.supabase && window.supabase.createClient) {
+                    window.supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+                    console.log('Supabase client initialized globally');
+                }
+            } catch (error) {
+                console.error('Failed to initialize Supabase client:', error);
+            }
+        });
+    </script>
 </head>
 <body>
     <div id="auth-container">
@@ -73,20 +116,6 @@
         </div>
         <button id="show-highscores">Highscores</button>
     </div>
-    
-    <!-- For debugging purposes -->
-    <script>
-        window.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM fully loaded');
-            // Add direct click handler for guest play as backup
-            document.getElementById('guest-play').onclick = function() {
-                console.log('Guest play clicked (direct handler)');
-                document.getElementById('auth-container').classList.add('hidden');
-                document.getElementById('game-container').classList.remove('hidden');
-                return false;
-            };
-        });
-    </script>
     
     <!-- Non-module specific scripts -->
     <script src="./js/google-auth.js"></script>

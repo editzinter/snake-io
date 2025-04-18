@@ -9,7 +9,18 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsIn
 // Initialize Supabase client
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-console.log('Supabase client initialized');
+console.log('Supabase client initialized in module');
+
+// Also make it available globally for non-module scripts
+if (typeof window !== 'undefined') {
+    window.supabaseModule = supabase;
+    
+    // Check if global supabase is not already initialized
+    if (!window.supabase) {
+        window.supabase = supabase;
+        console.log('Supabase also exposed globally from module');
+    }
+}
 
 // Export for use in other files
 export { supabase }; 

@@ -155,6 +155,13 @@ function showGameContainer(user) {
     console.log('Game container should be visible now');
 }
 
+// Play as guest function - doesn't require Supabase
+function playAsGuest() {
+    console.log('Play as Guest clicked from auth.js');
+    showGameContainer(null);
+    return false; // Prevent default form submission
+}
+
 async function loadUserProfile(userId) {
     try {
         const { data, error } = await supabase
@@ -224,9 +231,10 @@ function initEventListeners() {
     }
 
     if (guestPlayButton) {
-        guestPlayButton.addEventListener('click', () => {
-            console.log('Guest play button clicked');
-            showGameContainer(null); // Play as guest
+        guestPlayButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            console.log('Guest play button clicked from auth.js event listener');
+            playAsGuest();
         });
     }
 
