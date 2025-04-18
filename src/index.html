@@ -25,7 +25,7 @@
                 </div>
                 <p id="auth-message"></p>
                 <button id="toggle-auth">Switch to Login</button>
-                <button id="guest-play">Play as Guest</button>
+                <button id="guest-play" onclick="window.playAsGuest()">Play as Guest</button>
             </div>
         </div>
     </div>
@@ -50,6 +50,19 @@
         </div>
         <button id="show-highscores">Highscores</button>
     </div>
+    
+    <!-- For debugging purposes -->
+    <script>
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM fully loaded');
+            // Add direct click handler for guest play as backup
+            document.getElementById('guest-play').onclick = function() {
+                console.log('Guest play clicked (direct handler)');
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('game-container').classList.remove('hidden');
+            };
+        });
+    </script>
     
     <!-- Supabase and game scripts -->
     <script src="./js/supabase.js"></script>

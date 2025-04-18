@@ -2,7 +2,7 @@
   "name": "snake-io-game",
   "version": "1.0.0",
   "description": "A multiplayer snake game similar to slither.io",
-  "main": "index.js",
+  "main": "src/js/index.js",
   "scripts": {
     "start": "parcel src/index.html",
     "build": "parcel build src/index.html",
@@ -22,5 +22,10 @@
   },
   "devDependencies": {
     "parcel-bundler": "^1.12.5"
-  }
+  },
+  "browserslist": [
+    "last 3 chrome versions",
+    "last 3 firefox versions",
+    "last 3 safari versions"
+  ]
 } 

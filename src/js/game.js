@@ -1,5 +1,4 @@
 // Import from auth and supabase
-import { currentUser, saveHighScore } from './auth.js';
 import { supabase } from './supabase.js';
 
 // Game variables
@@ -14,6 +13,62 @@ const highscoresDiv = document.getElementById('highscores');
 const highscoresList = document.getElementById('highscores-list');
 const showHighscoresButton = document.getElementById('show-highscores');
 const closeHighscoresButton = document.getElementById('close-highscores');
+
+// Variables that would be imported from auth.js
+let currentUser = null;
+async function saveHighScore(score) {
+    if (!currentUser) return false;
+    
+    try {
+        const { data: existingData, error: fetchError } = await supabase
+            .from('highscores')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .single();
+            
+        if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" which is fine
+            console.error('Error fetching existing score:', fetchError);
+            return false;
+        }
+        
+        // Only update if new score is higher or no previous score exists
+        if (!existingData || score > existingData.score) {
+            const { error: upsertError } = await supabase
+                .from('highscores')
+                .upsert({ 
+                    user_id: currentUser.id,
+                    score: score,
+                    username: document.getElementById('playerName').value || 'Anonymous'
+                });
+                
+            if (upsertError) {
+                console.error('Error saving score:', upsertError);
+                return false;
+            }
+            
+            return true;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('High score save error:', error);
+        return false;
+    }
+}
+
+// Try to load auth module dynamically if needed
+try {
+    import('./auth.js').then(module => {
+        console.log('Auth module loaded');
+        currentUser = module.currentUser;
+        // Replace the local save function with the imported one
+        saveHighScore = module.saveHighScore;
+    }).catch(err => {
+        console.warn('Could not load auth module:', err);
+    });
+} catch (e) {
+    console.warn('Dynamic import not supported, using fallback auth');
+}
 
 // Set canvas size
 canvas.width = window.innerWidth;
@@ -583,6 +638,7 @@ function gameLoop(timestamp) {
 
 // Initialize event listeners
 window.addEventListener('load', () => {
+    console.log('Game module loaded');
     // Adjust canvas to window size
     resizeCanvas();
 }); 

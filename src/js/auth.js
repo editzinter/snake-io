@@ -125,6 +125,8 @@ function showGameContainer(user) {
     if (user && user.id) {
         loadUserProfile(user.id);
     }
+    
+    console.log('Game container should be visible now');
 }
 
 async function loadUserProfile(userId) {
@@ -149,60 +151,85 @@ async function loadUserProfile(userId) {
     }
 }
 
-// Event listeners
-document.getElementById('signup-button').addEventListener('click', async () => {
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    
-    if (!email || !password) {
-        showAuthMessage('Please enter email and password.');
-        return;
+// Function to initialize all event listeners
+function initEventListeners() {
+    // Make sure elements exist before adding listeners
+    if (document.getElementById('signup-button')) {
+        document.getElementById('signup-button').addEventListener('click', async () => {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            
+            if (!email || !password) {
+                showAuthMessage('Please enter email and password.');
+                return;
+            }
+            
+            const user = await signUp(email, password);
+            if (user) {
+                showAuthMessage('Sign up successful! Please check your email to verify your account.');
+                toggleAuthMode(); // Switch to login
+            }
+        });
     }
-    
-    const user = await signUp(email, password);
-    if (user) {
-        showAuthMessage('Sign up successful! Please check your email to verify your account.');
-        toggleAuthMode(); // Switch to login
-    }
-});
 
-document.getElementById('login-button').addEventListener('click', async () => {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    
-    if (!email || !password) {
-        showAuthMessage('Please enter email and password.');
-        return;
+    if (document.getElementById('login-button')) {
+        document.getElementById('login-button').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                showAuthMessage('Please enter email and password.');
+                return;
+            }
+            
+            const user = await login(email, password);
+            if (user) {
+                showGameContainer(user);
+            }
+        });
     }
-    
-    const user = await login(email, password);
-    if (user) {
-        showGameContainer(user);
+
+    if (toggleAuthButton) {
+        toggleAuthButton.addEventListener('click', toggleAuthMode);
     }
-});
 
-toggleAuthButton.addEventListener('click', toggleAuthMode);
-
-guestPlayButton.addEventListener('click', () => {
-    showGameContainer(null); // Play as guest
-});
-
-logoutButton.addEventListener('click', async () => {
-    const success = await logout();
-    if (success) {
-        currentUser = null;
-        gameContainer.classList.add('hidden');
-        authContainer.classList.remove('hidden');
+    if (guestPlayButton) {
+        guestPlayButton.addEventListener('click', () => {
+            console.log('Guest play button clicked');
+            showGameContainer(null); // Play as guest
+        });
     }
-});
+
+    if (logoutButton) {
+        logoutButton.addEventListener('click', async () => {
+            const success = await logout();
+            if (success) {
+                currentUser = null;
+                gameContainer.classList.add('hidden');
+                authContainer.classList.remove('hidden');
+            }
+        });
+    }
+}
 
 // Check session on page load
 window.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOM Content Loaded');
+    // Initialize event listeners
+    initEventListeners();
+    
+    // Check if user is already logged in
     const user = await checkUserSession();
     if (user) {
         showGameContainer(user);
     }
 });
+
+// Direct guest play function that can be called from HTML onclick event as fallback
+window.playAsGuest = function() {
+    console.log('Play as guest called from onclick fallback');
+    showGameContainer(null);
+};
 
 // Export user-related functions for use in game.js
 export { currentUser, saveHighScore }; 
