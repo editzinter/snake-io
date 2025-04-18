@@ -2,26 +2,25 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Add environment variable loading with fallbacks
-const getEnvVariable = (key, fallback) => {
+var getEnvVariable = function(key, fallback) {
   try {
     // Try different ways to access environment variables
-    return (
-      // Browser environment with import.meta
-      (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) ||
-      // Node/webpack environment
-      (typeof process !== 'undefined' && process.env && process.env[key]) ||
-      // Fallback to provided value
-      fallback
-    );
+    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+      return import.meta.env[key];
+    } else if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      return process.env[key];
+    } else {
+      return fallback;
+    }
   } catch (error) {
-    console.warn(`Failed to load environment variable ${key}:`, error);
+    console.warn('Failed to load environment variable ' + key + ':', error);
     return fallback;
   }
 };
 
 // Supabase configuration - with fallbacks
-const supabaseUrl = getEnvVariable('SUPABASE_URL', 'https://fqcvrfbaivbozlgqafw.supabase.co');
-const supabaseAnonKey = getEnvVariable('SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY3ZyZmJhaXZib3psZ3FhZnciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcxMzg5MzU5MiwiZXhwIjoyMDI5NDY5NTkyfQ.lWrETfMgHE9QMBHXgXvxY9qDd2bVszQa1E0xEQD9E_I');
+var supabaseUrl = getEnvVariable('SUPABASE_URL', 'https://fqcvrfbaivbozlgqafw.supabase.co');
+var supabaseAnonKey = getEnvVariable('SUPABASE_ANON_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxY3ZyZmJhaXZib3psZ3FhZnciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcxMzg5MzU5MiwiZXhwIjoyMDI5NDY5NTkyfQ.lWrETfMgHE9QMBHXgXvxY9qDd2bVszQa1E0xEQD9E_I');
 
 // Debug configuration
 console.log('%c Supabase Config:', 'background: #3ECF8E; color: white; padding: 3px; border-radius: 3px;', { 
@@ -30,7 +29,7 @@ console.log('%c Supabase Config:', 'background: #3ECF8E; color: white; padding: 
 });
 
 // Check if we're in a secure context
-const isSecureContext = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+var isSecureContext = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 console.log('Is secure context:', isSecureContext, 'Hostname:', window.location.hostname);
 
 if (!isSecureContext) {
@@ -38,14 +37,14 @@ if (!isSecureContext) {
 }
 
 // Initialize Supabase client with additional options and even more robust error handling
-let supabase;
+var supabase;
 try {
     if (!supabaseUrl || !supabaseAnonKey) {
         throw new Error('Supabase URL or key is undefined');
     }
     
     // Create a reliable client creation function
-    const createReliableClient = () => {
+    var createReliableClient = function() {
         try {
             return createClient(supabaseUrl, supabaseAnonKey, {
                 auth: {
@@ -64,62 +63,71 @@ try {
     };
     
     // Create the real client
-    const realClient = createReliableClient();
+    var realClient = createReliableClient();
     if (!realClient) {
         throw new Error('Failed to create Supabase client');
     }
     
     // Helper to safely handle Supabase method calls
-    const safeMethod = (obj, method, fallbackValue = null) => {
+    var safeMethod = function(obj, method, fallbackValue) {
+        if (fallbackValue === undefined) fallbackValue = null;
+        
         try {
             if (typeof obj[method] !== 'function') {
-                console.warn(`Supabase client method ${method} is not a function`);
-                return () => fallbackValue;
+                console.warn('Supabase client method ' + method + ' is not a function');
+                return function() { return fallbackValue; };
             }
             
             // Return a wrapped function that catches errors
-            return function(...args) {
+            return function() {
                 try {
+                    var args = Array.prototype.slice.call(arguments);
                     if (window.debugHelper) {
-                        window.debugHelper.logInfo('Supabase', `Calling ${method} with: ${JSON.stringify(args)}`);
+                        window.debugHelper.logInfo('Supabase', 'Calling ' + method + ' with: ' + JSON.stringify(args));
                     } else {
-                        console.log(`Calling ${method} with:`, args);
+                        console.log('Calling ' + method + ' with:', args);
                     }
                     
-                    const result = obj[method].apply(obj, args);
+                    var result = obj[method].apply(obj, args);
                     
                     // Handle Promise results
                     if (result instanceof Promise || (result && typeof result.then === 'function')) {
                         return result
-                            .then(response => {
-                                if (response?.error) {
-                                    console.warn(`Warning in ${method}:`, response.error);
+                            .then(function(response) {
+                                if (response && response.error) {
+                                    console.warn('Warning in ' + method + ':', response.error);
                                 } else {
-                                    console.log(`Success from ${method}:`, response);
+                                    console.log('Success from ' + method + ':', response);
                                 }
                                 return response;
                             })
-                            .catch(error => {
-                                console.error(`Error in ${method}:`, error);
+                            .catch(function(error) {
+                                console.error('Error in ' + method + ':', error);
                                 // Return a structured error to avoid undefined
-                                return { data: null, error: { message: error?.message || 'Unknown error', originalError: error } };
+                                return { 
+                                    data: null, 
+                                    error: { 
+                                        message: error && error.message ? error.message : 'Unknown error', 
+                                        originalError: error 
+                                    } 
+                                };
                             });
                     }
                     
                     return result;
                 } catch (error) {
-                    console.error(`Exception in ${method}:`, error);
+                    console.error('Exception in ' + method + ':', error);
                     return fallbackValue;
                 }
             };
         } catch (error) {
-            console.error(`Error creating safe method for ${method}:`, error);
-            return () => fallbackValue;
+            console.error('Error creating safe method for ' + method + ':', error);
+            return function() { return fallbackValue; };
         }
     };
     
     // Create a robust auth proxy
-    const createSafeAuthProxy = (authTarget) => {
+    var createSafeAuthProxy = function(authTarget) {
         if (!authTarget) {
             console.error('Auth target is undefined');
             return createFallbackAuth();
@@ -128,7 +136,7 @@ try {
         try {
             return new Proxy(authTarget, {
                 get: function(target, prop) {
-                    const original = target[prop];
+                    var original = target[prop];
                     
                     // For non-functions, just return the property
                     if (typeof original !== 'function') {
@@ -136,7 +144,7 @@ try {
                     }
                     
                     // For functions, wrap them with error handling
-                    return safeMethod(target, prop, { error: { message: `Auth method ${prop} failed` } });
+                    return safeMethod(target, prop, { error: { message: 'Auth method ' + prop + ' failed' } });
                 }
             });
         } catch (error) {
@@ -146,15 +154,15 @@ try {
     };
     
     // Create fallback auth object
-    const createFallbackAuth = () => {
+    var createFallbackAuth = function() {
         return {
-            signUp: () => Promise.resolve({ data: null, error: { message: 'Auth unavailable' } }),
-            signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Auth unavailable' } }),
-            signInWithOAuth: () => Promise.resolve({ data: null, error: { message: 'Auth unavailable' } }),
-            signOut: () => Promise.resolve({ error: null }),
-            getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-            getUser: () => Promise.resolve({ data: { user: null }, error: null }),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+            signUp: function() { return Promise.resolve({ data: null, error: { message: 'Auth unavailable' } }); },
+            signInWithPassword: function() { return Promise.resolve({ data: null, error: { message: 'Auth unavailable' } }); },
+            signInWithOAuth: function() { return Promise.resolve({ data: null, error: { message: 'Auth unavailable' } }); },
+            signOut: function() { return Promise.resolve({ error: null }); },
+            getSession: function() { return Promise.resolve({ data: { session: null }, error: null }); },
+            getUser: function() { return Promise.resolve({ data: { user: null }, error: null }); },
+            onAuthStateChange: function() { return { data: { subscription: { unsubscribe: function() {} } } }; }
         };
     };
     
@@ -169,7 +177,7 @@ try {
                 
                 // If the property doesn't exist, log and return a safe fallback
                 if (!(prop in target)) {
-                    console.warn(`Property ${prop} does not exist on Supabase client`);
+                    console.warn('Property ' + prop + ' does not exist on Supabase client');
                     return undefined;
                 }
                 
@@ -181,7 +189,7 @@ try {
                 // For other properties, return as is
                 return target[prop];
             } catch (error) {
-                console.error(`Error accessing Supabase property ${String(prop)}:`, error);
+                console.error('Error accessing Supabase property ' + String(prop) + ':', error);
                 return undefined;
             }
         }
@@ -198,13 +206,13 @@ try {
     console.error('%c Supabase initialization failed:', 'background: #d32f2f; color: white; padding: 3px; border-radius: 3px;', error);
     
     // Create a comprehensive fallback client with promise-based returns
-    const createFallbackMethod = (methodName) => {
+    var createFallbackMethod = function(methodName) {
         return function() {
-            console.warn(`Using fallback for ${methodName} after initialization failure`);
+            console.warn('Using fallback for ' + methodName + ' after initialization failure');
             return Promise.resolve({ 
                 data: null, 
                 error: { 
-                    message: `Supabase client initialization failed`, 
+                    message: 'Supabase client initialization failed', 
                     originalError: error
                 } 
             });
@@ -220,26 +228,36 @@ try {
             signOut: createFallbackMethod('auth.signOut'),
             getSession: createFallbackMethod('auth.getSession'),
             getUser: createFallbackMethod('auth.getUser'),
-            onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } })
+            onAuthStateChange: function() { return { data: { subscription: { unsubscribe: function() {} } } }; }
         },
-        from: (table) => {
-            console.warn(`Using fallback for database operations on ${table}`);
+        from: function(table) {
+            console.warn('Using fallback for database operations on ' + table);
             return {
-                select: () => ({
-                    order: () => ({
-                        limit: () => createFallbackMethod(`from(${table}).select.order.limit`)()
-                    }),
-                    eq: () => ({
-                        single: () => createFallbackMethod(`from(${table}).select.eq.single`)()
-                    })
-                }),
-                insert: () => createFallbackMethod(`from(${table}).insert`)(),
-                update: () => ({
-                    eq: () => createFallbackMethod(`from(${table}).update.eq`)()
-                }),
-                delete: () => ({
-                    eq: () => createFallbackMethod(`from(${table}).delete.eq`)()
-                })
+                select: function() {
+                    return {
+                        order: function() {
+                            return {
+                                limit: function() { return createFallbackMethod('from(' + table + ').select.order.limit')(); }
+                            };
+                        },
+                        eq: function() {
+                            return {
+                                single: function() { return createFallbackMethod('from(' + table + ').select.eq.single')(); }
+                            };
+                        }
+                    };
+                },
+                insert: function() { return createFallbackMethod('from(' + table + ').insert')(); },
+                update: function() {
+                    return {
+                        eq: function() { return createFallbackMethod('from(' + table + ').update.eq')(); }
+                    };
+                },
+                delete: function() {
+                    return {
+                        eq: function() { return createFallbackMethod('from(' + table + ').delete.eq')(); }
+                    };
+                }
             };
         }
     };
@@ -249,7 +267,7 @@ try {
 if (typeof window !== 'undefined') {
     try {
         // Create a proxy that handles insecure contexts
-        const supabaseGlobalProxy = new Proxy(supabase, {
+        var supabaseGlobalProxy = new Proxy(supabase, {
             get: function(target, prop) {
                 if (prop === 'auth' && !isSecureContext) {
                     console.error('Authentication features are not available in insecure contexts. Please use HTTPS or localhost.');

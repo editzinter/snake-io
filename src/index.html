@@ -14,8 +14,12 @@
         // Track script loading errors globally
         window.scriptErrors = [];
         window.trackScriptError = function(src, error) {
-            window.scriptErrors.push({ src, error: error?.toString(), time: new Date().toISOString() });
-            console.error(`Script error in ${src}:`, error);
+            window.scriptErrors.push({ 
+                src: src, 
+                error: error && error.toString ? error.toString() : String(error), 
+                time: new Date().toISOString() 
+            });
+            console.error("Script error in " + src + ":", error);
         };
     </script>
 </head>
@@ -67,9 +71,9 @@
     <!-- Module scripts with error handling -->
     <script type="module">
         // Centralized module loading error handler
-        window.addEventListener('error', (event) => {
+        window.addEventListener('error', function(event) {
             if (event.filename && event.filename.includes('.js')) {
-                const errorDetails = {
+                var errorDetails = {
                     message: event.message,
                     filename: event.filename,
                     lineno: event.lineno,
@@ -79,7 +83,7 @@
                 
                 // Show error in UI if authentication related
                 if (event.filename.includes('supabase.js') || event.filename.includes('auth.js')) {
-                    const authMessage = document.getElementById('authMessage');
+                    var authMessage = document.getElementById('authMessage');
                     if (authMessage) {
                         authMessage.textContent = 'Error loading authentication. Guest play still available.';
                         authMessage.classList.remove('hidden');
@@ -102,8 +106,8 @@
             console.log('Window loaded, applying direct guest play fallback');
             
             // Enhanced guest play handler
-            const setupGuestPlay = function() {
-                const guestButton = document.getElementById('playAsGuest');
+            var setupGuestPlay = function() {
+                var guestButton = document.getElementById('playAsGuest');
                 
                 if (!guestButton) {
                     console.error('Guest play button not found in DOM');
@@ -123,8 +127,8 @@
                         console.log('Guest play clicked (direct fallback handler)');
                         
                         // Get DOM elements
-                        const authContainer = document.getElementById('auth-container');
-                        const gameContainer = document.getElementById('game-container');
+                        var authContainer = document.getElementById('auth-container');
+                        var gameContainer = document.getElementById('game-container');
                         
                         // Validate elements exist
                         if (!authContainer) {
@@ -141,15 +145,15 @@
                         console.log('Game container shown via direct fallback');
                         
                         // Set a default guest name
-                        const playerNameInput = document.getElementById('playerName');
+                        var playerNameInput = document.getElementById('playerName');
                         if (playerNameInput) {
-                            const randomId = Math.floor(Math.random() * 10000);
-                            playerNameInput.value = `Guest_${randomId}`;
+                            var randomId = Math.floor(Math.random() * 10000);
+                            playerNameInput.value = 'Guest_' + randomId;
                         }
                         
                         // Optional: Auto-start the game for guests
-                        setTimeout(() => {
-                            const startButton = document.getElementById('startButton');
+                        setTimeout(function() {
+                            var startButton = document.getElementById('startButton');
                             if (startButton) {
                                 console.log('Auto-starting game for guest');
                                 startButton.click();
@@ -161,7 +165,7 @@
                         console.error('Error in guest play handler:', error);
                         
                         // Show error message to user
-                        const authMessage = document.getElementById('authMessage');
+                        var authMessage = document.getElementById('authMessage');
                         if (authMessage) {
                             authMessage.textContent = 'Error starting guest play: ' + (error.message || 'Unknown error');
                             authMessage.classList.remove('hidden');
@@ -190,12 +194,12 @@
             
             // Try setup after DOM is ready if it wasn't done on load
             setTimeout(function() {
-                const guestButton = document.getElementById('playAsGuest');
+                var guestButton = document.getElementById('playAsGuest');
                 if (guestButton && !guestButton._hasGuestPlayHandler) {
                     console.log('Setting up guest play handler from DOMContentLoaded fallback');
                     
                     // Simulate a load event to trigger the handler setup
-                    const loadEvent = new Event('load');
+                    var loadEvent = new Event('load');
                     window.dispatchEvent(loadEvent);
                 }
             }, 500);

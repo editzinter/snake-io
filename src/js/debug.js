@@ -55,7 +55,8 @@
     });
     
     // Log function to add messages to the debug panel
-    function log(message, type = 'info') {
+    function log(message, type) {
+        if (type === undefined) type = 'info';
         const panel = document.getElementById('debug-panel');
         if (panel) {
             const entry = document.createElement('div');
@@ -154,36 +155,38 @@
 })();
 
 // Global error handling
-window.addEventListener('error', (e) => {
+window.addEventListener('error', function(e) {
   console.error("Global Error:", e.message, e.error);
-  console.error("Error Stack:", e.error && e.error.stack);
+  if (e.error && e.error.stack) {
+    console.error("Error Stack:", e.error.stack);
+  }
   
   // Try to extract minified variable info
   if (e.message && e.message.includes("t is undefined")) {
     console.error("Context where 't' is undefined:", e);
-    const stack = e.error && e.error.stack;
-    if (stack) {
+    if (e.error && e.error.stack) {
+      const stack = e.error.stack;
       const lines = stack.split('\n');
       console.error("Relevant stack trace:");
-      lines.forEach(line => {
-        if (line.includes('.js:')) {
-          console.error(line.trim());
+      for (var i = 0; i < lines.length; i++) {
+        if (lines[i].includes('.js:')) {
+          console.error(lines[i].trim());
         }
-      });
+      }
     }
   }
 });
 
 // Override console.error to make errors more visible
-const originalError = console.error;
+const originalErrorFn = console.error;
 console.error = function() {
-  originalError.apply(console, arguments);
+  originalErrorFn.apply(console, arguments);
   
   // Create a more visible error in the console
   if (arguments[0] && typeof arguments[0] === 'string') {
     const errorMsg = Array.from(arguments).join(' ');
     if (errorMsg.includes('undefined') || errorMsg.includes('null')) {
-      originalError.call(console, '%c CRITICAL ERROR: Undefined or null reference ', 
+      originalErrorFn.call(console, '%c CRITICAL ERROR: Undefined or null reference ', 
         'background: #e74c3c; color: white; padding: 2px 4px; border-radius: 2px; font-weight: bold;', 
         errorMsg);
     }
@@ -200,15 +203,15 @@ console.log('Origin:', window.location.origin);
 // Enhanced debug script for capturing errors and logging
 console.log('%c Debug Mode Active', 'background: #222; color: #bada55; padding: 5px; border-radius: 5px;');
 
-// Comprehensive error tracking
-window.addEventListener('error', (event) => {
+// Comprehensive error tracking - using a traditional function to avoid arrow functions
+window.addEventListener('error', function(event) {
   const errorDetails = {
     message: event.message,
     filename: event.filename,
     lineno: event.lineno,
     colno: event.colno,
-    error: event.error?.toString(),
-    stack: event.error?.stack
+    error: event.error ? event.error.toString() : undefined,
+    stack: event.error && event.error.stack ? event.error.stack : undefined
   };
   
   console.error('%c Detailed Error Capture:', 'background: #f44336; color: white; padding: 3px; border-radius: 3px;', 
@@ -230,50 +233,80 @@ window.addEventListener('error', (event) => {
       language: navigator.language,
       platform: navigator.platform,
       cookiesEnabled: navigator.cookieEnabled,
-      windowSize: `${window.innerWidth}x${window.innerHeight}`
+      windowSize: window.innerWidth + 'x' + window.innerHeight
     });
   }
 });
 
 // Unhandled promise rejection handler
-window.addEventListener('unhandledrejection', (event) => {
+window.addEventListener('unhandledrejection', function(event) {
+  var reasonText = (event.reason && typeof event.reason.toString === 'function') ? 
+    event.reason.toString() : 
+    String(event.reason);
+  var stackText = (event.reason && event.reason.stack) ? 
+    event.reason.stack : 
+    'No stack trace available';
+    
   console.error('%c Unhandled Promise Rejection:', 'background: #d32f2f; color: white; padding: 3px; border-radius: 3px;', 
-    event.reason?.toString() || event.reason, 
-    event.reason?.stack || 'No stack trace available');
+    reasonText, stackText);
 });
 
-// Track script loading
-const trackScriptLoading = () => {
-  const scripts = document.querySelectorAll('script');
-  scripts.forEach(script => {
-    const src = script.src || 'inline';
-    script.addEventListener('load', () => console.log(`Script loaded: ${src}`));
-    script.addEventListener('error', (e) => console.error(`Script failed to load: ${src}`, e));
-  });
+// Track script loading - using traditional function
+var trackScriptLoading = function() {
+  var scripts = document.querySelectorAll('script');
+  for (var i = 0; i < scripts.length; i++) {
+    var script = scripts[i];
+    var src = script.src || 'inline';
+    script.addEventListener('load', function() {
+      console.log('Script loaded: ' + src);
+    });
+    script.addEventListener('error', function(e) {
+      console.error('Script failed to load: ' + src, e);
+    });
+  }
 };
 
 // Run script tracking after DOM content is loaded
 document.addEventListener('DOMContentLoaded', trackScriptLoading);
 
 // Store original console methods to enhance them
-const originalConsole = {
+var consoleBackup = {
   log: console.log,
   error: console.error,
   warn: console.warn,
   info: console.info
 };
 
-// Add timestamps to console methods
-const addTimestamps = () => {
-  const getTimestamp = () => {
-    const now = new Date();
-    return `[${now.toISOString()}]`;
+// Add timestamps to console methods - using traditional function
+var addTimestamps = function() {
+  var getTimestamp = function() {
+    var now = new Date();
+    return '[' + now.toISOString() + ']';
   };
 
-  console.log = (...args) => originalConsole.log(getTimestamp(), ...args);
-  console.error = (...args) => originalConsole.error(getTimestamp(), ...args);
-  console.warn = (...args) => originalConsole.warn(getTimestamp(), ...args);
-  console.info = (...args) => originalConsole.info(getTimestamp(), ...args);
+  console.log = function() {
+    var args = Array.prototype.slice.call(arguments);
+    args.unshift(getTimestamp());
+    consoleBackup.log.apply(console, args);
+  };
+
+  console.error = function() {
+    var args = Array.prototype.slice.call(arguments);
+    args.unshift(getTimestamp());
+    consoleBackup.error.apply(console, args);
+  };
+
+  console.warn = function() {
+    var args = Array.prototype.slice.call(arguments);
+    args.unshift(getTimestamp());
+    consoleBackup.warn.apply(console, args);
+  };
+
+  console.info = function() {
+    var args = Array.prototype.slice.call(arguments);
+    args.unshift(getTimestamp());
+    consoleBackup.info.apply(console, args);
+  };
 };
 
 // Apply console enhancements
@@ -281,27 +314,31 @@ addTimestamps();
 
 // Expose a global debug helper for direct use in other modules
 window.debugHelper = {
-  logError: (source, error) => {
-    console.error(`%c Error in ${source}:`, 'background: #d50000; color: white; padding: 2px; border-radius: 2px;', 
-      error?.toString(), error?.stack || 'No stack trace');
+  logError: function(source, error) {
+    var errorString = error ? error.toString() : 'Unknown error';
+    var stackTrace = error && error.stack ? error.stack : 'No stack trace';
+    
+    console.error('%c Error in ' + source + ':', 'background: #d50000; color: white; padding: 2px; border-radius: 2px;', 
+      errorString, stackTrace);
   },
-  logInfo: (source, message) => {
-    console.info(`%c ${source}:`, 'background: #2196f3; color: white; padding: 2px; border-radius: 2px;', message);
+  logInfo: function(source, message) {
+    console.info('%c ' + source + ':', 'background: #2196f3; color: white; padding: 2px; border-radius: 2px;', message);
   },
-  trackFunction: (funcName, func) => {
-    return function(...args) {
-      console.log(`Calling ${funcName} with:`, args);
+  trackFunction: function(funcName, func) {
+    return function() {
+      var args = Array.prototype.slice.call(arguments);
+      console.log('Calling ' + funcName + ' with:', args);
       try {
-        const result = func.apply(this, args);
+        var result = func.apply(this, args);
         if (result && typeof result.then === 'function') {
-          return result.catch(err => {
-            console.error(`Error in async ${funcName}:`, err);
+          return result.catch(function(err) {
+            console.error('Error in async ' + funcName + ':', err);
             throw err;
           });
         }
         return result;
       } catch (err) {
-        console.error(`Error in ${funcName}:`, err);
+        console.error('Error in ' + funcName + ':', err);
         throw err;
       }
     };
