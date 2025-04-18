@@ -23,17 +23,17 @@ function handleAuthError(error, defaultMessage = 'An error occurred') {
     console.error('Auth error:', error);
     
     // Check for specific error types
-    if (error.message?.includes('digest')) {
+    if (error && error.message && error.message.includes('digest')) {
         showAuthMessage('This site requires HTTPS or localhost for security features. Please use a secure connection.');
         return;
     }
     
-    if (error.message?.includes('rate limit')) {
+    if (error && error.message && error.message.includes('rate limit')) {
         showAuthMessage('Too many attempts. Please wait a moment and try again.');
         return;
     }
     
-    showAuthMessage(error.message || defaultMessage);
+    showAuthMessage(error && error.message ? error.message : defaultMessage);
 }
 
 // Sign up function
@@ -118,7 +118,7 @@ async function checkUserSession() {
     try {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        return data?.session?.user || null;
+        return data && data.session && data.session.user ? data.session.user : null;
     } catch (error) {
         handleAuthError(error, 'Session check error');
         return null;
@@ -207,8 +207,8 @@ function initEventListeners() {
     if (authForm) {
         authForm.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const email = emailInput?.value;
-            const password = passwordInput?.value;
+            const email = emailInput && emailInput.value;
+            const password = passwordInput && passwordInput.value;
             
             if (!email || !password) {
                 showAuthMessage('Please enter email and password.');
@@ -273,7 +273,7 @@ async function initAuth() {
         
         // Set up auth state change listener
         supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' && session?.user) {
+            if (event === 'SIGNED_IN' && session && session.user) {
                 showGameContainer(session.user);
             } else if (event === 'SIGNED_OUT') {
                 currentUser = null;
