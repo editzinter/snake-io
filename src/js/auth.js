@@ -4,16 +4,18 @@ import { supabase } from './supabase.js';
 // DOM elements
 const authContainer = document.getElementById('auth-container');
 const gameContainer = document.getElementById('game-container');
-const signupForm = document.getElementById('signup-form');
-const loginForm = document.getElementById('login-form');
-const toggleAuthButton = document.getElementById('toggle-auth');
-const guestPlayButton = document.getElementById('guest-play');
-const googleSignInButton = document.getElementById('google-signin');
+const authForm = document.getElementById('authForm');
+const toggleAuthButton = document.getElementById('toggleAuth');
+const playAsGuestButton = document.getElementById('playAsGuest');
+const googleSignInButton = document.getElementById('googleSignIn');
+const submitAuthButton = document.getElementById('submitAuth');
 const logoutButton = document.getElementById('logout-button');
-const authMessage = document.getElementById('auth-message');
+const authMessage = document.getElementById('authMessage');
+const emailInput = document.getElementById('email');
+const passwordInput = document.getElementById('password');
 
 // Current auth state
-let isLoginMode = false;
+let isLoginMode = true;
 let currentUser = null;
 
 // Error handling utility
@@ -66,7 +68,7 @@ async function login(email, password) {
 
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
-            password,
+            password
         });
 
         if (error) throw error;
@@ -130,11 +132,14 @@ function showAuthMessage(message, type = 'error') {
     authMessage.textContent = message;
     authMessage.className = `auth-message ${type}`;
     
+    // Remove hidden class
+    authMessage.classList.remove('hidden');
+    
     // Clear message after 5 seconds
     setTimeout(() => {
         if (authMessage.textContent === message) {
             authMessage.textContent = '';
-            authMessage.className = 'auth-message';
+            authMessage.className = 'auth-message hidden';
         }
     }, 5000);
 }
@@ -142,13 +147,11 @@ function showAuthMessage(message, type = 'error') {
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     if (isLoginMode) {
-        signupForm.style.display = 'none';
-        loginForm.style.display = 'flex';
+        submitAuthButton.textContent = 'Sign In';
         toggleAuthButton.textContent = 'Switch to Sign Up';
     } else {
-        signupForm.style.display = 'flex';
-        loginForm.style.display = 'none';
-        toggleAuthButton.textContent = 'Switch to Login';
+        submitAuthButton.textContent = 'Sign Up';
+        toggleAuthButton.textContent = 'Switch to Sign In';
     }
 }
 
@@ -200,41 +203,29 @@ async function loadUserProfile(userId) {
 
 // Function to initialize all event listeners
 function initEventListeners() {
-    // Signup button
-    const signupButton = document.getElementById('signup-button');
-    if (signupButton) {
-        signupButton.addEventListener('click', async () => {
-            const email = document.getElementById('signup-email')?.value;
-            const password = document.getElementById('signup-password')?.value;
+    // Auth form submission
+    if (authForm) {
+        authForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const email = emailInput?.value;
+            const password = passwordInput?.value;
             
             if (!email || !password) {
                 showAuthMessage('Please enter email and password.');
                 return;
             }
             
-            const user = await signUp(email, password);
-            if (user) {
-                showAuthMessage('Sign up successful! Please check your email to verify your account.', 'success');
-                toggleAuthMode(); // Switch to login
-            }
-        });
-    }
-
-    // Login button
-    const loginButton = document.getElementById('login-button');
-    if (loginButton) {
-        loginButton.addEventListener('click', async () => {
-            const email = document.getElementById('login-email')?.value;
-            const password = document.getElementById('login-password')?.value;
-            
-            if (!email || !password) {
-                showAuthMessage('Please enter email and password.');
-                return;
-            }
-            
-            const user = await login(email, password);
-            if (user) {
-                showGameContainer(user);
+            if (isLoginMode) {
+                const user = await login(email, password);
+                if (user) {
+                    showGameContainer(user);
+                }
+            } else {
+                const user = await signUp(email, password);
+                if (user) {
+                    showAuthMessage('Sign up successful! Please check your email to verify your account.', 'success');
+                    toggleAuthMode(); // Switch to login
+                }
             }
         });
     }
@@ -250,8 +241,8 @@ function initEventListeners() {
     }
 
     // Guest play button
-    if (guestPlayButton) {
-        guestPlayButton.addEventListener('click', function(event) {
+    if (playAsGuestButton) {
+        playAsGuestButton.addEventListener('click', function(event) {
             event.preventDefault();
             console.log('Guest play button clicked from auth.js event listener');
             playAsGuest();
