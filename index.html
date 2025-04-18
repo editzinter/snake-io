@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake.io Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="menu">
+            <h1>Snake.io</h1>
+            <input type="text" id="playerName" placeholder="Enter your name">
+            <button id="startButton">Play</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreboard">
+            <h2>Score: <span id="score">0</span></h2>
+            <h3>Leaderboard</h3>
+            <ul id="leaderboard"></ul>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html> 

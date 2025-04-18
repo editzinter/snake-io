@@ -1,0 +1,26 @@
+{
+  "name": "snake-io-game",
+  "version": "1.0.0",
+  "description": "A multiplayer snake game similar to slither.io",
+  "main": "index.js",
+  "scripts": {
+    "start": "parcel src/index.html",
+    "build": "parcel build src/index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "game",
+    "snake",
+    "canvas",
+    "html5"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  }
+} 

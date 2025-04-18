@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake.io Game</title>
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+    <div id="auth-container">
+        <div id="auth-menu">
+            <h1>Snake.io</h1>
+            <div id="auth-form">
+                <div id="signup-form">
+                    <h2>Sign Up</h2>
+                    <input type="email" id="signup-email" placeholder="Email">
+                    <input type="password" id="signup-password" placeholder="Password">
+                    <button id="signup-button">Sign Up</button>
+                </div>
+                <div id="login-form">
+                    <h2>Login</h2>
+                    <input type="email" id="login-email" placeholder="Email">
+                    <input type="password" id="login-password" placeholder="Password">
+                    <button id="login-button">Login</button>
+                </div>
+                <p id="auth-message"></p>
+                <button id="toggle-auth">Switch to Login</button>
+                <button id="guest-play">Play as Guest</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container" class="hidden">
+        <div id="menu">
+            <h1>Snake.io</h1>
+            <input type="text" id="playerName" placeholder="Enter your name">
+            <button id="startButton">Play</button>
+            <button id="logout-button">Logout</button>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="scoreboard">
+            <h2>Score: <span id="score">0</span></h2>
+            <h3>Leaderboard</h3>
+            <ul id="leaderboard"></ul>
+        </div>
+        <div id="highscores" class="hidden">
+            <h2>Global Highscores</h2>
+            <ul id="highscores-list"></ul>
+            <button id="close-highscores">Close</button>
+        </div>
+        <button id="show-highscores">Highscores</button>
+    </div>
+    
+    <!-- Supabase and game scripts -->
+    <script src="./js/supabase.js"></script>
+    <script src="./js/auth.js"></script>
+    <script src="./js/game.js"></script>
+</body>
+</html> 
