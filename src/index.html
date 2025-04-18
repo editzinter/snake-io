@@ -66,32 +66,22 @@
     <div id="auth-container">
         <div id="auth-menu">
             <h1>Snake.io</h1>
-            <div id="auth-form">
-                <div id="signup-form">
-                    <h2>Sign Up</h2>
-                    <input type="email" id="signup-email" placeholder="Email">
-                    <input type="password" id="signup-password" placeholder="Password">
-                    <button id="signup-button">Sign Up</button>
-                </div>
-                <div id="login-form">
-                    <h2>Login</h2>
-                    <input type="email" id="login-email" placeholder="Email">
-                    <input type="password" id="login-password" placeholder="Password">
-                    <button id="login-button">Login</button>
-                </div>
-                <p id="auth-message"></p>
-                <button id="toggle-auth">Switch to Login</button>
-                
-                <!-- Google Auth Button -->
-                <div class="social-auth-divider">
-                    <span>or</span>
-                </div>
-                <button id="google-signin" class="google-btn" onclick="window.googleSignIn && window.googleSignIn()">
-                    <span class="google-icon"></span>
-                    <span>Continue with Google</span>
-                </button>
-                
-                <button id="guest-play" onclick="return directPlayAsGuest();">Play as Guest</button>
+            <div class="auth-container">
+                <div id="authMessage" class="auth-message hidden"></div>
+                <form id="authForm" class="auth-form">
+                    <div class="form-group">
+                        <input type="email" id="email" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="password" placeholder="Password" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="submitAuth">Sign In</button>
+                        <button type="button" id="toggleAuth">Switch to Sign Up</button>
+                        <button type="button" id="googleSignIn">Sign in with Google</button>
+                        <button type="button" id="playAsGuest">Play as Guest</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

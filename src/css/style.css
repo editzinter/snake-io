@@ -307,4 +307,122 @@ body {
 
 .hidden {
     display: none;
+}
+
+.auth-message {
+    min-height: 20px;
+    padding: 8px;
+    margin: 10px 0;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.auth-message.error {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.2);
+}
+
+.auth-message.success {
+    color: #2ecc71;
+    background-color: rgba(46, 204, 113, 0.1);
+    border: 1px solid rgba(46, 204, 113, 0.2);
+}
+
+.auth-message.warning {
+    color: #f1c40f;
+    background-color: rgba(241, 196, 15, 0.1);
+    border: 1px solid rgba(241, 196, 15, 0.2);
+}
+
+.auth-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.auth-form {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-actions button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#submitAuth {
+    background: #4CAF50;
+    color: white;
+}
+
+#submitAuth:hover {
+    background: #45a049;
+}
+
+#toggleAuth {
+    background: transparent;
+    border: 1px solid #4CAF50;
+    color: #4CAF50;
+}
+
+#toggleAuth:hover {
+    background: rgba(76, 175, 80, 0.1);
+}
+
+#googleSignIn {
+    background: #fff;
+    color: #757575;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+#googleSignIn:hover {
+    background: #f5f5f5;
+}
+
+#playAsGuest {
+    background: #607D8B;
+    color: white;
+}
+
+#playAsGuest:hover {
+    background: #546E7A;
 } 

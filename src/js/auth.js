@@ -16,23 +16,43 @@ const authMessage = document.getElementById('auth-message');
 let isLoginMode = false;
 let currentUser = null;
 
+// Error handling utility
+function handleAuthError(error, defaultMessage = 'An error occurred') {
+    console.error('Auth error:', error);
+    
+    // Check for specific error types
+    if (error.message?.includes('digest')) {
+        showAuthMessage('This site requires HTTPS or localhost for security features. Please use a secure connection.');
+        return;
+    }
+    
+    if (error.message?.includes('rate limit')) {
+        showAuthMessage('Too many attempts. Please wait a moment and try again.');
+        return;
+    }
+    
+    showAuthMessage(error.message || defaultMessage);
+}
+
 // Sign up function
 async function signUp(email, password) {
     try {
+        if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+            throw new Error('Signup requires a secure context (HTTPS or localhost)');
+        }
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: window.location.origin
+            }
         });
 
-        if (error) {
-            showAuthMessage(error.message);
-            return null;
-        }
-
+        if (error) throw error;
         return data.user;
     } catch (error) {
-        showAuthMessage('An error occurred during sign up.');
-        console.error('Sign up error:', error);
+        handleAuthError(error, 'An error occurred during sign up.');
         return null;
     }
 }
@@ -40,20 +60,19 @@ async function signUp(email, password) {
 // Login function
 async function login(email, password) {
     try {
+        if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+            throw new Error('Login requires a secure context (HTTPS or localhost)');
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password,
         });
 
-        if (error) {
-            showAuthMessage(error.message);
-            return null;
-        }
-
+        if (error) throw error;
         return data.user;
     } catch (error) {
-        showAuthMessage('An error occurred during login.');
-        console.error('Login error:', error);
+        handleAuthError(error, 'An error occurred during login.');
         return null;
     }
 }
@@ -61,25 +80,22 @@ async function login(email, password) {
 // Google sign in function
 async function signInWithGoogle() {
     try {
+        if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+            throw new Error('Google sign-in requires a secure context (HTTPS or localhost)');
+        }
+
         showAuthMessage('Connecting to Google...');
-        
-        // Always use the Netlify URL for redirects, regardless of where the app is running
-        const redirectUrl = 'https://snake-io-editzinter.netlify.app';
         
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: redirectUrl
+                redirectTo: window.location.origin
             }
         });
 
-        if (error) {
-            showAuthMessage(error.message);
-            console.error('Google sign-in error:', error);
-        }
+        if (error) throw error;
     } catch (error) {
-        showAuthMessage('Failed to connect to Google.');
-        console.error('Google sign-in error:', error);
+        handleAuthError(error, 'Failed to connect to Google.');
     }
 }
 
@@ -87,15 +103,10 @@ async function signInWithGoogle() {
 async function logout() {
     try {
         const { error } = await supabase.auth.signOut();
-        
-        if (error) {
-            console.error('Logout error:', error);
-            return false;
-        }
-        
+        if (error) throw error;
         return true;
     } catch (error) {
-        console.error('Logout error:', error);
+        handleAuthError(error, 'Logout error');
         return false;
     }
 }
@@ -104,28 +115,27 @@ async function logout() {
 async function checkUserSession() {
     try {
         const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-            console.error('Session error:', error);
-            return null;
-        }
-        
-        if (data && data.session) {
-            return data.session.user;
-        }
-        
-        return null;
+        if (error) throw error;
+        return data?.session?.user || null;
     } catch (error) {
-        console.error('Session check error:', error);
+        handleAuthError(error, 'Session check error');
         return null;
     }
 }
 
 // Helper functions
-function showAuthMessage(message) {
+function showAuthMessage(message, type = 'error') {
+    if (!authMessage) return;
+    
     authMessage.textContent = message;
+    authMessage.className = `auth-message ${type}`;
+    
+    // Clear message after 5 seconds
     setTimeout(() => {
-        authMessage.textContent = '';
+        if (authMessage.textContent === message) {
+            authMessage.textContent = '';
+            authMessage.className = 'auth-message';
+        }
     }, 5000);
 }
 
@@ -142,24 +152,29 @@ function toggleAuthMode() {
     }
 }
 
+// Play as guest function - doesn't require Supabase
+function playAsGuest() {
+    console.log('Play as Guest clicked from auth.js');
+    showGameContainer(null);
+    return false; // Prevent default form submission
+}
+
 function showGameContainer(user) {
+    if (!authContainer || !gameContainer) {
+        console.error('Required containers not found');
+        return;
+    }
+
     currentUser = user;
     authContainer.classList.add('hidden');
     gameContainer.classList.remove('hidden');
     
     // If user is logged in, attempt to get their saved profile
     if (user && user.id) {
-        loadUserProfile(user.id);
+        loadUserProfile(user.id).catch(console.error);
     }
     
     console.log('Game container should be visible now');
-}
-
-// Play as guest function - doesn't require Supabase
-function playAsGuest() {
-    console.log('Play as Guest clicked from auth.js');
-    showGameContainer(null);
-    return false; // Prevent default form submission
 }
 
 async function loadUserProfile(userId) {
@@ -170,27 +185,27 @@ async function loadUserProfile(userId) {
             .eq('id', userId)
             .single();
             
-        if (error) {
-            console.error('Error loading profile:', error);
-            return;
-        }
+        if (error) throw error;
         
         if (data) {
-            // Populate player name input with saved name if available
-            document.getElementById('playerName').value = data.username || '';
+            const playerNameInput = document.getElementById('playerName');
+            if (playerNameInput) {
+                playerNameInput.value = data.username || '';
+            }
         }
     } catch (error) {
-        console.error('Profile load error:', error);
+        handleAuthError(error, 'Profile load error');
     }
 }
 
 // Function to initialize all event listeners
 function initEventListeners() {
-    // Make sure elements exist before adding listeners
-    if (document.getElementById('signup-button')) {
-        document.getElementById('signup-button').addEventListener('click', async () => {
-            const email = document.getElementById('signup-email').value;
-            const password = document.getElementById('signup-password').value;
+    // Signup button
+    const signupButton = document.getElementById('signup-button');
+    if (signupButton) {
+        signupButton.addEventListener('click', async () => {
+            const email = document.getElementById('signup-email')?.value;
+            const password = document.getElementById('signup-password')?.value;
             
             if (!email || !password) {
                 showAuthMessage('Please enter email and password.');
@@ -199,16 +214,18 @@ function initEventListeners() {
             
             const user = await signUp(email, password);
             if (user) {
-                showAuthMessage('Sign up successful! Please check your email to verify your account.');
+                showAuthMessage('Sign up successful! Please check your email to verify your account.', 'success');
                 toggleAuthMode(); // Switch to login
             }
         });
     }
 
-    if (document.getElementById('login-button')) {
-        document.getElementById('login-button').addEventListener('click', async () => {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+    // Login button
+    const loginButton = document.getElementById('login-button');
+    if (loginButton) {
+        loginButton.addEventListener('click', async () => {
+            const email = document.getElementById('login-email')?.value;
+            const password = document.getElementById('login-password')?.value;
             
             if (!email || !password) {
                 showAuthMessage('Please enter email and password.');
@@ -222,14 +239,17 @@ function initEventListeners() {
         });
     }
 
+    // Toggle auth mode button
     if (toggleAuthButton) {
         toggleAuthButton.addEventListener('click', toggleAuthMode);
     }
 
+    // Google sign-in button
     if (googleSignInButton) {
         googleSignInButton.addEventListener('click', signInWithGoogle);
     }
 
+    // Guest play button
     if (guestPlayButton) {
         guestPlayButton.addEventListener('click', function(event) {
             event.preventDefault();
@@ -238,6 +258,7 @@ function initEventListeners() {
         });
     }
 
+    // Logout button
     if (logoutButton) {
         logoutButton.addEventListener('click', async () => {
             const success = await logout();
@@ -250,79 +271,48 @@ function initEventListeners() {
     }
 }
 
-// Handle OAuth redirects
-async function handleAuthRedirect() {
-    const { data, error } = await supabase.auth.getSession();
-    
-    if (data && data.session) {
-        // User has been redirected and authenticated successfully
-        currentUser = data.session.user;
-        showGameContainer(currentUser);
+// Initialize auth state
+async function initAuth() {
+    try {
+        // Check for existing session
+        const user = await checkUserSession();
+        if (user) {
+            showGameContainer(user);
+        }
+        
+        // Set up auth state change listener
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' && session?.user) {
+                showGameContainer(session.user);
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                if (gameContainer && authContainer) {
+                    gameContainer.classList.add('hidden');
+                    authContainer.classList.remove('hidden');
+                }
+            }
+        });
+
+        // Initialize event listeners
+        initEventListeners();
+    } catch (error) {
+        handleAuthError(error, 'Error initializing auth');
     }
 }
 
-// Check session on page load
-window.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM Content Loaded');
-    // Initialize event listeners
-    initEventListeners();
-    
-    // Check if this is a redirect from OAuth
-    await handleAuthRedirect();
-    
-    // Check if user is already logged in
-    const user = await checkUserSession();
-    if (user) {
-        showGameContainer(user);
-    }
-});
+// Initialize when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAuth);
+} else {
+    initAuth();
+}
 
-// Direct guest play function that can be called from HTML onclick event as fallback
-window.playAsGuest = function() {
-    console.log('Play as guest called from onclick fallback');
-    showGameContainer(null);
-};
-
-// Export user-related functions for use in game.js
-export { currentUser, saveHighScore }; 
-
-// Function to save user high score
-async function saveHighScore(score) {
-    if (!currentUser) return false;
-    
-    try {
-        const { data: existingData, error: fetchError } = await supabase
-            .from('highscores')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .single();
-            
-        if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found" which is fine
-            console.error('Error fetching existing score:', fetchError);
-            return false;
-        }
-        
-        // Only update if new score is higher or no previous score exists
-        if (!existingData || score > existingData.score) {
-            const { error: upsertError } = await supabase
-                .from('highscores')
-                .upsert({ 
-                    user_id: currentUser.id,
-                    score: score,
-                    username: document.getElementById('playerName').value || 'Anonymous'
-                });
-                
-            if (upsertError) {
-                console.error('Error saving score:', upsertError);
-                return false;
-            }
-            
-            return true;
-        }
-        
-        return false;
-    } catch (error) {
-        console.error('High score save error:', error);
-        return false;
-    }
-} 
+// Export necessary functions
+export {
+    signUp,
+    login,
+    signInWithGoogle,
+    logout,
+    playAsGuest,
+    showGameContainer
+}; 
