@@ -7,6 +7,17 @@
     <link rel="stylesheet" href="./css/style.css">
     <!-- Add Google icons for the sign-in button -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script>
+        // Globally available direct function to play as guest
+        function directPlayAsGuest() {
+            console.log('Direct play as guest function called');
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            return false; // Prevent default form submission
+        }
+    </script>
+    <!-- Include Supabase directly -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
     <div id="auth-container">
@@ -32,12 +43,12 @@
                 <div class="social-auth-divider">
                     <span>or</span>
                 </div>
-                <button id="google-signin" class="google-btn">
+                <button id="google-signin" class="google-btn" onclick="window.googleSignIn && window.googleSignIn()">
                     <span class="google-icon"></span>
                     <span>Continue with Google</span>
                 </button>
                 
-                <button id="guest-play" onclick="window.playAsGuest()">Play as Guest</button>
+                <button id="guest-play" onclick="return directPlayAsGuest();">Play as Guest</button>
             </div>
         </div>
     </div>
@@ -72,13 +83,17 @@
                 console.log('Guest play clicked (direct handler)');
                 document.getElementById('auth-container').classList.add('hidden');
                 document.getElementById('game-container').classList.remove('hidden');
+                return false;
             };
         });
     </script>
     
-    <!-- Supabase and game scripts -->
-    <script src="./js/supabase.js"></script>
-    <script src="./js/auth.js"></script>
-    <script src="./js/game.js"></script>
+    <!-- Non-module specific scripts -->
+    <script src="./js/google-auth.js"></script>
+    
+    <!-- Module scripts -->
+    <script src="./js/supabase.js" type="module"></script>
+    <script src="./js/auth.js" type="module"></script>
+    <script src="./js/game.js" type="module"></script>
 </body>
 </html> 
