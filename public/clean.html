@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake.io Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #111, #333);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #4CAF50;
+            margin-bottom: 20px;
+            font-size: 42px;
+        }
+        
+        p {
+            margin-bottom: 30px;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .play-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .play-button:hover {
+            background-color: #45a049;
+        }
+        
+        .google-button {
+            background-color: white;
+            color: #444;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .google-button:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .google-icon {
+            width: 18px;
+            height: 18px;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="%23EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="%234285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="%23FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="%2334A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>');
+            background-repeat: no-repeat;
+            background-size: contain;
+        }
+        
+        /* Game styles */
+        #game-container {
+            display: none;
+            width: 100%;
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        canvas {
+            display: block;
+            background-color: #111;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        
+        #playerName {
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        #startButton {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        #backButton {
+            background-color: #e74c3c;
+            color: white;
+            margin-top: 10px;
+        }
+        
+        #scoreboard {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="auth-container">
+        <h1>Snake.io</h1>
+        <p>Experience the classic snake game with a multiplayer twist. Collect food, grow your snake, and dominate the leaderboard!</p>
+        <div class="buttons">
+            <button class="play-button" id="guest-button">Play as Guest</button>
+            <button class="google-button" id="google-button">
+                <span class="google-icon"></span>
+                Continue with Google
+            </button>
+        </div>
+    </div>
+    
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="menu">
+            <h1>Snake.io</h1>
+            <input type="text" id="playerName" placeholder="Enter your name">
+            <button id="startButton" class="play-button">Start Game</button>
+            <button id="backButton">Back to Menu</button>
+        </div>
+        <div id="scoreboard">
+            <h2>Score: <span id="score">0</span></h2>
+            <h3>Leaderboard</h3>
+            <ul id="leaderboard"></ul>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const authContainer = document.getElementById('auth-container');
+        const gameContainer = document.getElementById('game-container');
+        const guestButton = document.getElementById('guest-button');
+        const googleButton = document.getElementById('google-button');
+        const canvas = document.getElementById('gameCanvas');
+        const menu = document.getElementById('menu');
+        const playerNameInput = document.getElementById('playerName');
+        const startButton = document.getElementById('startButton');
+        const backButton = document.getElementById('backButton');
+        const scoreElement = document.getElementById('score');
+        const scoreboard = document.getElementById('scoreboard');
+        const leaderboard = document.getElementById('leaderboard');
+        
+        // Game variables
+        let ctx;
+        let gameRunning = false;
+        let player = null;
+        let aiSnakes = [];
+        let foodItems = [];
+        let score = 0;
+        let lastTime = 0;
+        let frameCount = 0;
+        let mousePosition = { x: 0, y: 0 };
+        
+        // Colors
+        const colors = [
+            '#FF5733', '#33FF57', '#3357FF', '#F3FF33', '#FF33F3',
+            '#33FFF3', '#FF8C33', '#8CFF33', '#338CFF', '#FF338C'
+        ];
+        
+        // Event Listeners
+        guestButton.addEventListener('click', startAsGuest);
+        googleButton.addEventListener('click', startAsGuest); // Same function for simplicity
+        startButton.addEventListener('click', startGame);
+        backButton.addEventListener('click', goBack);
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('mousemove', updateMousePosition);
+        
+        // Functions
+        function startAsGuest() {
+            authContainer.style.display = 'none';
+            gameContainer.style.display = 'block';
+            initGame();
+        }
+        
+        function goBack() {
+            gameContainer.style.display = 'none';
+            authContainer.style.display = 'block';
+            gameRunning = false;
+        }
+        
+        function initGame() {
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            menu.style.display = 'block';
+            scoreboard.style.display = 'none';
+        }
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        function updateMousePosition(e) {
+            mousePosition.x = e.clientX;
+            mousePosition.y = e.clientY;
+        }
+        
+        function startGame() {
+            menu.style.display = 'none';
+            scoreboard.style.display = 'block';
+            
+            // Reset game state
+            gameRunning = true;
+            score = 0;
+            scoreElement.textContent = '0';
+            foodItems = [];
+            aiSnakes = [];
+            
+            // Create player
+            const playerName = playerNameInput.value.trim() || 'Player';
+            const playerColor = getRandomColor();
+            player = new Snake(0, 0, playerColor, playerName, true);
+            
+            // Create AI snakes
+            for (let i = 0; i < 10; i++) {
+                const pos = getRandomPosition(300);
+                aiSnakes.push(createAISnake(pos.x, pos.y));
+            }
+            
+            // Create initial food
+            for (let i = 0; i < 100; i++) {
+                spawnFood();
+            }
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function getRandomPosition(minDistance = 100) {
+            const x = Math.random() * (canvas.width * 3) - canvas.width;
+            const y = Math.random() * (canvas.height * 3) - canvas.height;
+            
+            if (player) {
+                const dx = player.segments[0].x - x;
+                const dy = player.segments[0].y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < minDistance) {
+                    return getRandomPosition(minDistance);
+                }
+            }
+            
+            return { x, y };
+        }
+        
+        function getRandomColor() {
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        function createAISnake(x, y) {
+            const color = getRandomColor();
+            const namePrefix = ['Hungry', 'Sneaky', 'Speedy', 'Slimy', 'Slithery', 'Wiggly'];
+            const nameSuffix = ['Snake', 'Python', 'Cobra', 'Viper', 'Worm', 'Eel'];
+            const name = `${namePrefix[Math.floor(Math.random() * namePrefix.length)]} ${nameSuffix[Math.floor(Math.random() * nameSuffix.length)]}`;
+            
+            return new Snake(x, y, color, name, false);
+        }
+        
+        function spawnFood() {
+            const pos = getRandomPosition();
+            const size = Math.random() < 0.1 ? 10 : 5;
+            const value = size === 10 ? 3 : 1;
+            
+            foodItems.push({
+                x: pos.x,
+                y: pos.y,
+                color: getRandomColor(),
+                size: size,
+                value: value
+            });
+        }
+        
+        function updateLeaderboard() {
+            // Clear leaderboard
+            leaderboard.innerHTML = '';
+            
+            // Get all snakes
+            const allSnakes = [player, ...aiSnakes].filter(snake => snake && snake.alive);
+            
+            // Sort by length
+            allSnakes.sort((a, b) => b.segmentTargets - a.segmentTargets);
+            
+            // Display top 5
+            for (let i = 0; i < Math.min(5, allSnakes.length); i++) {
+                const snake = allSnakes[i];
+                const li = document.createElement('li');
+                li.textContent = `${i+1}. ${snake.name}: ${snake.segmentTargets}`;
+                li.style.color = snake.color;
+                leaderboard.appendChild(li);
+            }
+        }
+        
+        // Snake class
+        class Snake {
+            constructor(x, y, color, name, isPlayer = false) {
+                this.segments = [{ x, y }];
+                this.color = color;
+                this.name = name;
+                this.velocity = { x: 0, y: 0 };
+                this.speed = 3;
+                this.segmentSize = 15;
+                this.segmentTargets = 10; // Starting length
+                this.isPlayer = isPlayer;
+                this.angle = 0;
+                this.targetAngle = 0;
+                this.turnSpeed = 0.1;
+                this.alive = true;
+            }
+            
+            update() {
+                if (!this.alive) return;
+                
+                if (this.isPlayer) {
+                    // Calculate angle to mouse
+                    const dx = mousePosition.x - canvas.width / 2;
+                    const dy = mousePosition.y - canvas.height / 2;
+                    this.targetAngle = Math.atan2(dy, dx);
+                } else {
+                    // AI movement
+                    if (Math.random() < 0.02) {
+                        this.targetAngle += (Math.random() - 0.5) * Math.PI / 2;
+                    }
+                    
+                    // Seek food
+                    let closestFood = null;
+                    let closestDistance = 200;
+                    
+                    for (const food of foodItems) {
+                        const dx = food.x - this.segments[0].x;
+                        const dy = food.y - this.segments[0].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < closestDistance) {
+                            closestFood = food;
+                            closestDistance = distance;
+                        }
+                    }
+                    
+                    if (closestFood) {
+                        const dx = closestFood.x - this.segments[0].x;
+                        const dy = closestFood.y - this.segments[0].y;
+                        this.targetAngle = Math.atan2(dy, dx);
+                    }
+                }
+                
+                // Smooth rotation
+                const angleDiff = (this.targetAngle - this.angle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
+                this.angle += angleDiff * this.turnSpeed;
+                
+                // Update velocity
+                this.velocity.x = Math.cos(this.angle) * this.speed;
+                this.velocity.y = Math.sin(this.angle) * this.speed;
+                
+                // Move head
+                const newHead = {
+                    x: this.segments[0].x + this.velocity.x,
+                    y: this.segments[0].y + this.velocity.y
+                };
+                
+                this.segments.unshift(newHead);
+                
+                // Limit length
+                if (this.segments.length > this.segmentTargets) {
+                    this.segments = this.segments.slice(0, this.segmentTargets);
+                }
+                
+                // Check collisions
+                this.checkFoodCollision();
+                this.checkSnakeCollisions();
+            }
+            
+            checkFoodCollision() {
+                const head = this.segments[0];
+                const eatDistance = this.segmentSize;
+                
+                for (let i = foodItems.length - 1; i >= 0; i--) {
+                    const food = foodItems[i];
+                    const dx = head.x - food.x;
+                    const dy = head.y - food.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < eatDistance) {
+                        // Eat food
+                        this.segmentTargets += food.value;
+                        if (this.isPlayer) {
+                            score += food.value;
+                            scoreElement.textContent = score;
+                        }
+                        
+                        // Remove food
+                        foodItems.splice(i, 1);
+                        
+                        // Spawn new food
+                        spawnFood();
+                    }
+                }
+            }
+            
+            checkSnakeCollisions() {
+                if (!this.alive) return;
+                
+                const head = this.segments[0];
+                
+                const snakesToCheck = this.isPlayer ? aiSnakes : [player, ...aiSnakes.filter(s => s !== this)];
+                
+                for (const otherSnake of snakesToCheck) {
+                    if (!otherSnake || !otherSnake.alive) continue;
+                    
+                    const startSegment = otherSnake === this ? 1 : 0;
+                    
+                    for (let i = startSegment; i < otherSnake.segments.length; i++) {
+                        const segment = otherSnake.segments[i];
+                        const dx = head.x - segment.x;
+                        const dy = head.y - segment.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < this.segmentSize * 0.8) {
+                            this.die();
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            die() {
+                this.alive = false;
+                
+                // Convert segments to food
+                for (let i = 0; i < this.segments.length; i += 3) {
+                    foodItems.push({
+                        x: this.segments[i].x,
+                        y: this.segments[i].y,
+                        color: this.color,
+                        size: 5,
+                        value: 1
+                    });
+                }
+                
+                if (this.isPlayer) {
+                    // End game after short delay
+                    setTimeout(() => {
+                        gameRunning = false;
+                        menu.style.display = 'block';
+                        scoreboard.style.display = 'none';
+                    }, 2000);
+                } else {
+                    // Replace AI snake
+                    setTimeout(() => {
+                        const index = aiSnakes.indexOf(this);
+                        if (index !== -1) {
+                            const pos = getRandomPosition(300);
+                            aiSnakes[index] = createAISnake(pos.x, pos.y);
+                        }
+                    }, 5000);
+                }
+            }
+            
+            draw(ctx, offsetX, offsetY) {
+                if (!this.alive) return;
+                
+                // Draw segments
+                for (let i = this.segments.length - 1; i >= 0; i--) {
+                    const segment = this.segments[i];
+                    const size = this.segmentSize * (i === 0 ? 1.2 : 1);
+                    
+                    ctx.beginPath();
+                    ctx.arc(
+                        segment.x - offsetX,
+                        segment.y - offsetY,
+                        size,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    
+                    // Add eyes to head
+                    if (i === 0) {
+                        // Eyes
+                        const eyeOffset = size * 0.5;
+                        const leftEyeX = segment.x - offsetX + Math.cos(this.angle - Math.PI/4) * eyeOffset;
+                        const leftEyeY = segment.y - offsetY + Math.sin(this.angle - Math.PI/4) * eyeOffset;
+                        const rightEyeX = segment.x - offsetX + Math.cos(this.angle + Math.PI/4) * eyeOffset;
+                        const rightEyeY = segment.y - offsetY + Math.sin(this.angle + Math.PI/4) * eyeOffset;
+                        
+                        // Draw eyes
+                        ctx.beginPath();
+                        ctx.arc(leftEyeX, leftEyeY, size * 0.3, 0, Math.PI * 2);
+                        ctx.fillStyle = 'white';
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.arc(rightEyeX, rightEyeY, size * 0.3, 0, Math.PI * 2);
+                        ctx.fillStyle = 'white';
+                        ctx.fill();
+                        
+                        // Pupils
+                        ctx.beginPath();
+                        ctx.arc(leftEyeX + Math.cos(this.angle) * 2, leftEyeY + Math.sin(this.angle) * 2, size * 0.15, 0, Math.PI * 2);
+                        ctx.fillStyle = 'black';
+                        ctx.fill();
+                        
+                        ctx.beginPath();
+                        ctx.arc(rightEyeX + Math.cos(this.angle) * 2, rightEyeY + Math.sin(this.angle) * 2, size * 0.15, 0, Math.PI * 2);
+                        ctx.fillStyle = 'black';
+                        ctx.fill();
+                    }
+                }
+                
+                // Draw name
+                if (this.segments.length > 0) {
+                    const head = this.segments[0];
+                    ctx.font = '14px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.name, head.x - offsetX, head.y - offsetY - this.segmentSize - 10);
+                }
+            }
+        }
+        
+        function drawBackground(ctx, offsetX, offsetY) {
+            // Draw grid
+            ctx.strokeStyle = '#222';
+            ctx.lineWidth = 1;
+            
+            const gridSize = 50;
+            const offsetXMod = offsetX % gridSize;
+            const offsetYMod = offsetY % gridSize;
+            
+            // Horizontal lines
+            for (let y = -offsetYMod; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Vertical lines
+            for (let x = -offsetXMod; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+        }
+        
+        function gameLoop(timestamp) {
+            // Calculate delta time
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+            
+            // Update game state
+            if (gameRunning) {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Calculate camera position
+                let cameraX = 0;
+                let cameraY = 0;
+                
+                if (player && player.alive) {
+                    cameraX = player.segments[0].x - canvas.width / 2;
+                    cameraY = player.segments[0].y - canvas.height / 2;
+                    
+                    // Update player
+                    player.update();
+                }
+                
+                // Draw background
+                drawBackground(ctx, cameraX, cameraY);
+                
+                // Update and draw AI snakes
+                for (const snake of aiSnakes) {
+                    if (snake.alive) {
+                        snake.update();
+                        snake.draw(ctx, cameraX, cameraY);
+                    }
+                }
+                
+                // Draw food
+                for (const food of foodItems) {
+                    ctx.beginPath();
+                    ctx.arc(
+                        food.x - cameraX,
+                        food.y - cameraY,
+                        food.size,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fillStyle = food.color;
+                    ctx.fill();
+                }
+                
+                // Draw player on top
+                if (player && player.alive) {
+                    player.draw(ctx, cameraX, cameraY);
+                }
+                
+                // Update leaderboard
+                frameCount++;
+                if (frameCount % 30 === 0) {
+                    updateLeaderboard();
+                    
+                    // Spawn new food occasionally
+                    if (foodItems.length < 300 && Math.random() < 0.3) {
+                        spawnFood();
+                    }
+                }
+                
+                // Continue game loop
+                requestAnimationFrame(gameLoop);
+            }
+        }
+    </script>
+</body>
+</html> 
