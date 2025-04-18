@@ -26,11 +26,73 @@ try {
         throw new Error('Supabase URL or key is undefined');
     }
     
-    supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    // Create a wrapper for the real client that adds safety checks
+    const realClient = createClient(supabaseUrl, supabaseAnonKey, {
         auth: {
             autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: true
+        }
+    });
+    
+    // Create a proxy that adds null-safe handling
+    supabase = new Proxy(realClient, {
+        get: function(target, prop) {
+            // Special handling for auth operations
+            if (prop === 'auth') {
+                const authTarget = target.auth;
+                if (!authTarget) {
+                    console.error('Auth is undefined on Supabase client');
+                    return {
+                        signUp: () => ({ error: { message: 'Auth is undefined on Supabase client' } }),
+                        signInWithPassword: () => ({ error: { message: 'Auth is undefined on Supabase client' } }),
+                        signInWithOAuth: () => ({ error: { message: 'Auth is undefined on Supabase client' } }),
+                        signOut: () => ({ error: { message: 'Auth is undefined on Supabase client' } }),
+                        getSession: () => ({ error: { message: 'Auth is undefined on Supabase client' } }),
+                        onAuthStateChange: () => {}
+                    };
+                }
+                
+                // Return a proxy for auth methods to handle undefined results
+                return new Proxy(authTarget, {
+                    get: function(authObj, method) {
+                        const original = authObj[method];
+                        
+                        // If it's not a function, just return it
+                        if (typeof original !== 'function') {
+                            return original;
+                        }
+                        
+                        // Return wrapped function with extra safety
+                        return function(...args) {
+                            try {
+                                console.log(`Calling auth.${method}() with:`, ...args);
+                                const result = original.apply(authObj, args);
+                                
+                                // Handle Promise results from auth methods
+                                if (result instanceof Promise) {
+                                    return result
+                                        .then(response => {
+                                            console.log(`Result from auth.${method}():`, response);
+                                            return response;
+                                        })
+                                        .catch(error => {
+                                            console.error(`Error in auth.${method}():`, error);
+                                            return { data: null, error };
+                                        });
+                                }
+                                
+                                return result;
+                            } catch (error) {
+                                console.error(`Exception in auth.${method}():`, error);
+                                return { data: null, error };
+                            }
+                        };
+                    }
+                });
+            }
+            
+            return target[prop];
         }
     });
     

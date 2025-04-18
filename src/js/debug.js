@@ -151,4 +151,48 @@
             }
         }
     };
-})(); 
+})();
+
+// Global error handling
+window.addEventListener('error', (e) => {
+  console.error("Global Error:", e.message, e.error);
+  console.error("Error Stack:", e.error && e.error.stack);
+  
+  // Try to extract minified variable info
+  if (e.message && e.message.includes("t is undefined")) {
+    console.error("Context where 't' is undefined:", e);
+    const stack = e.error && e.error.stack;
+    if (stack) {
+      const lines = stack.split('\n');
+      console.error("Relevant stack trace:");
+      lines.forEach(line => {
+        if (line.includes('.js:')) {
+          console.error(line.trim());
+        }
+      });
+    }
+  }
+});
+
+// Override console.error to make errors more visible
+const originalError = console.error;
+console.error = function() {
+  originalError.apply(console, arguments);
+  
+  // Create a more visible error in the console
+  if (arguments[0] && typeof arguments[0] === 'string') {
+    const errorMsg = Array.from(arguments).join(' ');
+    if (errorMsg.includes('undefined') || errorMsg.includes('null')) {
+      originalError.call(console, '%c CRITICAL ERROR: Undefined or null reference ', 
+        'background: #e74c3c; color: white; padding: 2px 4px; border-radius: 2px; font-weight: bold;', 
+        errorMsg);
+    }
+  }
+};
+
+// Log environment info
+console.log('Debug script loaded');
+console.log('Browser:', navigator.userAgent);
+console.log('Secure context:', window.isSecureContext);
+console.log('Hostname:', window.location.hostname);
+console.log('Origin:', window.location.origin); 
