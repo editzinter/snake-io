@@ -341,12 +341,14 @@
                 <div class="social-auth-divider">
                     <span>or</span>
                 </div>
-                <button id="google-signin" class="google-btn">
+                <button id="google-signin" class="google-btn" onclick="directPlayWithoutAuth()">
                     <span class="google-icon"></span>
                     <span>Continue with Google</span>
                 </button>
                 
-                <button id="guest-play">Play as Guest</button>
+                <button id="guest-play" onclick="directPlayWithoutAuth(); return false;">
+                    Play as Guest
+                </button>
             </div>
         </div>
     </div>
@@ -927,6 +929,39 @@
             console.log('DOM fully loaded');
             initializeEventListeners();
         });
+    </script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // Google sign in handler - load this after everything else
+        window.onload = function() {
+            // Initialize Google Sign-In button if it exists
+            const googleSignInButton = document.getElementById('google-signin');
+            if (googleSignInButton) {
+                googleSignInButton.addEventListener('click', function() {
+                    // This should be shown on a successful sign-in
+                    console.log('Google sign-in clicked - redirecting to game');
+                    // For now, just show game container
+                    document.getElementById('auth-container').classList.add('hidden');
+                    document.getElementById('game-container').classList.remove('hidden');
+                    
+                    // Initialize game
+                    if (typeof initializeGame === 'function') {
+                        initializeGame();
+                    }
+                });
+            }
+        };
+    </script>
+    <script>
+        // Direct play function for all authentication buttons
+        function directPlayWithoutAuth() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('game-container').classList.remove('hidden');
+            if (typeof initializeGame === 'function') {
+                initializeGame();
+            }
+            return false;
+        }
     </script>
 </body>
 </html> 
