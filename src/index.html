@@ -9,6 +9,15 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Debug script to capture errors -->
     <script src="./js/debug.js"></script>
+    <!-- Error handling for script loading -->
+    <script>
+        // Track script loading errors globally
+        window.scriptErrors = [];
+        window.trackScriptError = function(src, error) {
+            window.scriptErrors.push({ src, error: error?.toString(), time: new Date().toISOString() });
+            console.error(`Script error in ${src}:`, error);
+        };
+    </script>
 </head>
 <body>
     <div id="auth-container">
@@ -55,33 +64,141 @@
         <button id="show-highscores">Highscores</button>
     </div>
     
-    <!-- Module scripts -->
-    <script src="./js/supabase.js" type="module"></script>
-    <script src="./js/auth.js" type="module"></script>
-    <script src="./js/game.js" type="module"></script>
+    <!-- Module scripts with error handling -->
+    <script type="module">
+        // Centralized module loading error handler
+        window.addEventListener('error', (event) => {
+            if (event.filename && event.filename.includes('.js')) {
+                const errorDetails = {
+                    message: event.message,
+                    filename: event.filename,
+                    lineno: event.lineno,
+                    colno: event.colno
+                };
+                console.error('Module Loading Error:', errorDetails);
+                
+                // Show error in UI if authentication related
+                if (event.filename.includes('supabase.js') || event.filename.includes('auth.js')) {
+                    const authMessage = document.getElementById('authMessage');
+                    if (authMessage) {
+                        authMessage.textContent = 'Error loading authentication. Guest play still available.';
+                        authMessage.classList.remove('hidden');
+                        authMessage.style.color = 'orange';
+                    }
+                }
+            }
+        });
+    </script>
+    
+    <!-- Load modules with error handling -->
+    <script src="./js/supabase.js" type="module" onerror="window.trackScriptError('supabase.js', event)"></script>
+    <script src="./js/auth.js" type="module" onerror="window.trackScriptError('auth.js', event)"></script>
+    <script src="./js/game.js" type="module" onerror="window.trackScriptError('game.js', event)"></script>
 
-    <!-- Non-module script for direct guest play as a fallback -->
+    <!-- Enhanced non-module script for direct guest play as a fallback -->
     <script>
         // Wait for all modules to load, then apply a direct event listener as a fallback
         window.addEventListener('load', function() {
             console.log('Window loaded, applying direct guest play fallback');
-            const guestButton = document.getElementById('playAsGuest');
-            if (guestButton) {
-                guestButton.addEventListener('click', function(e) {
-                    console.log('Guest play clicked (direct fallback handler)');
-                    const authContainer = document.getElementById('auth-container');
-                    const gameContainer = document.getElementById('game-container');
+            
+            // Enhanced guest play handler
+            const setupGuestPlay = function() {
+                const guestButton = document.getElementById('playAsGuest');
+                
+                if (!guestButton) {
+                    console.error('Guest play button not found in DOM');
+                    return;
+                }
+                
+                // Try to avoid duplicate event handlers
+                if (guestButton._hasGuestPlayHandler) {
+                    console.log('Guest play handler already attached');
+                    return;
+                }
+                
+                guestButton.addEventListener('click', function guestPlayHandler(e) {
+                    e.preventDefault();
                     
-                    if (authContainer && gameContainer) {
+                    try {
+                        console.log('Guest play clicked (direct fallback handler)');
+                        
+                        // Get DOM elements
+                        const authContainer = document.getElementById('auth-container');
+                        const gameContainer = document.getElementById('game-container');
+                        
+                        // Validate elements exist
+                        if (!authContainer) {
+                            throw new Error('Auth container not found');
+                        }
+                        
+                        if (!gameContainer) {
+                            throw new Error('Game container not found');
+                        }
+                        
+                        // Toggle visibility
                         authContainer.classList.add('hidden');
                         gameContainer.classList.remove('hidden');
                         console.log('Game container shown via direct fallback');
+                        
+                        // Set a default guest name
+                        const playerNameInput = document.getElementById('playerName');
+                        if (playerNameInput) {
+                            const randomId = Math.floor(Math.random() * 10000);
+                            playerNameInput.value = `Guest_${randomId}`;
+                        }
+                        
+                        // Optional: Auto-start the game for guests
+                        setTimeout(() => {
+                            const startButton = document.getElementById('startButton');
+                            if (startButton) {
+                                console.log('Auto-starting game for guest');
+                                startButton.click();
+                            }
+                        }, 500);
+                        
+                        return false;
+                    } catch (error) {
+                        console.error('Error in guest play handler:', error);
+                        
+                        // Show error message to user
+                        const authMessage = document.getElementById('authMessage');
+                        if (authMessage) {
+                            authMessage.textContent = 'Error starting guest play: ' + (error.message || 'Unknown error');
+                            authMessage.classList.remove('hidden');
+                            authMessage.style.color = 'red';
+                        }
+                        
+                        return false;
                     }
-                    
-                    if (e) e.preventDefault();
-                    return false;
                 });
-            }
+                
+                // Mark this button as having the handler attached
+                guestButton._hasGuestPlayHandler = true;
+                console.log('Guest play fallback handler attached successfully');
+            };
+            
+            // Try immediately
+            setupGuestPlay();
+            
+            // And also try after a delay in case DOM is not fully ready
+            setTimeout(setupGuestPlay, 1000);
+        });
+        
+        // Secondary fallback in case the load event doesn't fire properly
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, ensuring guest play fallback is ready');
+            
+            // Try setup after DOM is ready if it wasn't done on load
+            setTimeout(function() {
+                const guestButton = document.getElementById('playAsGuest');
+                if (guestButton && !guestButton._hasGuestPlayHandler) {
+                    console.log('Setting up guest play handler from DOMContentLoaded fallback');
+                    
+                    // Simulate a load event to trigger the handler setup
+                    const loadEvent = new Event('load');
+                    window.dispatchEvent(loadEvent);
+                }
+            }, 500);
         });
     </script>
 </body>

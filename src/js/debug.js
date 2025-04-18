@@ -195,4 +195,117 @@ console.log('Debug script loaded');
 console.log('Browser:', navigator.userAgent);
 console.log('Secure context:', window.isSecureContext);
 console.log('Hostname:', window.location.hostname);
-console.log('Origin:', window.location.origin); 
+console.log('Origin:', window.location.origin);
+
+// Enhanced debug script for capturing errors and logging
+console.log('%c Debug Mode Active', 'background: #222; color: #bada55; padding: 5px; border-radius: 5px;');
+
+// Comprehensive error tracking
+window.addEventListener('error', (event) => {
+  const errorDetails = {
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+    error: event.error?.toString(),
+    stack: event.error?.stack
+  };
+  
+  console.error('%c Detailed Error Capture:', 'background: #f44336; color: white; padding: 3px; border-radius: 3px;', 
+    JSON.stringify(errorDetails, null, 2));
+  
+  // Specific handling for minified variable errors
+  if (event.message.includes('is undefined') || event.message.includes('cannot read property')) {
+    console.error('%c Potential Minification Error Detected', 'background: #f57c00; color: white; padding: 3px; border-radius: 3px;');
+    console.error('Possible Causes:', [
+      'Incorrect module loading',
+      'Webpack/Parcel bundling issue',
+      'Dependency version mismatch',
+      'Script execution order problem'
+    ]);
+    
+    // Log browser environment info to help debugging
+    console.info('Environment Info:', {
+      userAgent: navigator.userAgent,
+      language: navigator.language,
+      platform: navigator.platform,
+      cookiesEnabled: navigator.cookieEnabled,
+      windowSize: `${window.innerWidth}x${window.innerHeight}`
+    });
+  }
+});
+
+// Unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('%c Unhandled Promise Rejection:', 'background: #d32f2f; color: white; padding: 3px; border-radius: 3px;', 
+    event.reason?.toString() || event.reason, 
+    event.reason?.stack || 'No stack trace available');
+});
+
+// Track script loading
+const trackScriptLoading = () => {
+  const scripts = document.querySelectorAll('script');
+  scripts.forEach(script => {
+    const src = script.src || 'inline';
+    script.addEventListener('load', () => console.log(`Script loaded: ${src}`));
+    script.addEventListener('error', (e) => console.error(`Script failed to load: ${src}`, e));
+  });
+};
+
+// Run script tracking after DOM content is loaded
+document.addEventListener('DOMContentLoaded', trackScriptLoading);
+
+// Store original console methods to enhance them
+const originalConsole = {
+  log: console.log,
+  error: console.error,
+  warn: console.warn,
+  info: console.info
+};
+
+// Add timestamps to console methods
+const addTimestamps = () => {
+  const getTimestamp = () => {
+    const now = new Date();
+    return `[${now.toISOString()}]`;
+  };
+
+  console.log = (...args) => originalConsole.log(getTimestamp(), ...args);
+  console.error = (...args) => originalConsole.error(getTimestamp(), ...args);
+  console.warn = (...args) => originalConsole.warn(getTimestamp(), ...args);
+  console.info = (...args) => originalConsole.info(getTimestamp(), ...args);
+};
+
+// Apply console enhancements
+addTimestamps();
+
+// Expose a global debug helper for direct use in other modules
+window.debugHelper = {
+  logError: (source, error) => {
+    console.error(`%c Error in ${source}:`, 'background: #d50000; color: white; padding: 2px; border-radius: 2px;', 
+      error?.toString(), error?.stack || 'No stack trace');
+  },
+  logInfo: (source, message) => {
+    console.info(`%c ${source}:`, 'background: #2196f3; color: white; padding: 2px; border-radius: 2px;', message);
+  },
+  trackFunction: (funcName, func) => {
+    return function(...args) {
+      console.log(`Calling ${funcName} with:`, args);
+      try {
+        const result = func.apply(this, args);
+        if (result && typeof result.then === 'function') {
+          return result.catch(err => {
+            console.error(`Error in async ${funcName}:`, err);
+            throw err;
+          });
+        }
+        return result;
+      } catch (err) {
+        console.error(`Error in ${funcName}:`, err);
+        throw err;
+      }
+    };
+  }
+};
+
+console.log('Debug utilities initialized'); 
