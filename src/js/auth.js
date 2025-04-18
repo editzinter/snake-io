@@ -1,38 +1,45 @@
 // Import supabase client
 import { supabase } from './supabase.js';
 
-// DOM elements
-const authContainer = document.getElementById('auth-container');
-const gameContainer = document.getElementById('game-container');
-const authForm = document.getElementById('authForm');
-const toggleAuthButton = document.getElementById('toggleAuth');
-const playAsGuestButton = document.getElementById('playAsGuest');
-const googleSignInButton = document.getElementById('googleSignIn');
-const submitAuthButton = document.getElementById('submitAuth');
-const logoutButton = document.getElementById('logout-button');
-const authMessage = document.getElementById('authMessage');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
+// DOM elements - We'll initialize these later
+let authContainer, gameContainer, authForm, toggleAuthButton, 
+    playAsGuestButton, googleSignInButton, submitAuthButton, 
+    logoutButton, authMessage, emailInput, passwordInput;
 
 // Current auth state
 let isLoginMode = true;
 let currentUser = null;
 
-// Debug info
-console.log('Auth module loaded');
-console.log('DOM Elements:', {
-    authContainer: !!authContainer,
-    gameContainer: !!gameContainer,
-    authForm: !!authForm,
-    toggleAuthButton: !!toggleAuthButton,
-    playAsGuestButton: !!playAsGuestButton,
-    googleSignInButton: !!googleSignInButton,
-    submitAuthButton: !!submitAuthButton,
-    logoutButton: !!logoutButton,
-    authMessage: !!authMessage,
-    emailInput: !!emailInput,
-    passwordInput: !!passwordInput
-});
+// Function to safely get DOM elements
+function initDOMElements() {
+    authContainer = document.getElementById('auth-container');
+    gameContainer = document.getElementById('game-container');
+    authForm = document.getElementById('authForm');
+    toggleAuthButton = document.getElementById('toggleAuth');
+    playAsGuestButton = document.getElementById('playAsGuest');
+    googleSignInButton = document.getElementById('googleSignIn');
+    submitAuthButton = document.getElementById('submitAuth');
+    logoutButton = document.getElementById('logout-button');
+    authMessage = document.getElementById('authMessage');
+    emailInput = document.getElementById('email');
+    passwordInput = document.getElementById('password');
+
+    // Debug info
+    console.log('Auth module loaded');
+    console.log('DOM Elements:', {
+        authContainer: !!authContainer,
+        gameContainer: !!gameContainer,
+        authForm: !!authForm,
+        toggleAuthButton: !!toggleAuthButton,
+        playAsGuestButton: !!playAsGuestButton,
+        googleSignInButton: !!googleSignInButton,
+        submitAuthButton: !!submitAuthButton,
+        logoutButton: !!logoutButton,
+        authMessage: !!authMessage,
+        emailInput: !!emailInput,
+        passwordInput: !!passwordInput
+    });
+}
 
 // Error handling utility
 function handleAuthError(error, defaultMessage = 'An error occurred') {
@@ -60,6 +67,10 @@ async function signUp(email, password) {
             throw new Error('Signup requires a secure context (HTTPS or localhost)');
         }
 
+        if (!supabase || !supabase.auth) {
+            throw new Error('Supabase client not initialized properly');
+        }
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -85,6 +96,10 @@ async function login(email, password) {
             throw new Error('Login requires a secure context (HTTPS or localhost)');
         }
 
+        if (!supabase || !supabase.auth) {
+            throw new Error('Supabase client not initialized properly');
+        }
+
         const { data, error } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -105,6 +120,10 @@ async function signInWithGoogle() {
         console.log('Attempting Google sign-in');
         if (!window.isSecureContext && !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
             throw new Error('Google sign-in requires a secure context (HTTPS or localhost)');
+        }
+
+        if (!supabase || !supabase.auth) {
+            throw new Error('Supabase client not initialized properly');
         }
 
         showAuthMessage('Connecting to Google...', 'info');
@@ -133,6 +152,11 @@ async function signInWithGoogle() {
 async function logout() {
     try {
         console.log('Attempting logout');
+        
+        if (!supabase || !supabase.auth) {
+            throw new Error('Supabase client not initialized properly');
+        }
+        
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
         console.log('Logout successful');
@@ -147,6 +171,12 @@ async function logout() {
 async function checkUserSession() {
     try {
         console.log('Checking user session');
+        
+        if (!supabase || !supabase.auth) {
+            console.warn('Supabase client not initialized properly for session check');
+            return null;
+        }
+        
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
         
@@ -172,7 +202,7 @@ function showAuthMessage(message, type = 'error') {
     
     // Clear message after 5 seconds
     setTimeout(() => {
-        if (authMessage.textContent === message) {
+        if (authMessage && authMessage.textContent === message) {
             authMessage.textContent = '';
             authMessage.className = 'auth-message hidden';
         }
@@ -182,6 +212,8 @@ function showAuthMessage(message, type = 'error') {
 function toggleAuthMode() {
     isLoginMode = !isLoginMode;
     console.log('Toggling auth mode. Is login mode now:', isLoginMode);
+    
+    if (!submitAuthButton || !toggleAuthButton) return;
     
     if (isLoginMode) {
         submitAuthButton.textContent = 'Sign In';
@@ -201,7 +233,7 @@ function playAsGuest() {
 
 function showGameContainer(user) {
     if (!authContainer || !gameContainer) {
-        console.error('Required containers not found');
+        console.error('Required containers not found for showing game container');
         return;
     }
 
@@ -212,7 +244,9 @@ function showGameContainer(user) {
     
     // If user is logged in, attempt to get their saved profile
     if (user && user.id) {
-        loadUserProfile(user.id).catch(console.error);
+        loadUserProfile(user.id).catch(error => {
+            console.error('Error loading user profile:', error);
+        });
     }
     
     console.log('Game container should be visible now');
@@ -221,6 +255,11 @@ function showGameContainer(user) {
 async function loadUserProfile(userId) {
     try {
         console.log('Loading user profile for ID:', userId);
+        
+        if (!supabase) {
+            throw new Error('Supabase client not initialized properly');
+        }
+        
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
@@ -297,8 +336,10 @@ function initEventListeners() {
             const success = await logout();
             if (success) {
                 currentUser = null;
-                gameContainer.classList.add('hidden');
-                authContainer.classList.remove('hidden');
+                if (gameContainer && authContainer) {
+                    gameContainer.classList.add('hidden');
+                    authContainer.classList.remove('hidden');
+                }
             }
         });
     }
@@ -309,6 +350,9 @@ async function initAuth() {
     try {
         console.log('Initializing auth system');
         
+        // Initialize DOM elements first
+        initDOMElements();
+        
         // Check for existing session
         const user = await checkUserSession();
         if (user) {
@@ -316,19 +360,23 @@ async function initAuth() {
         }
         
         // Set up auth state change listener
-        supabase.auth.onAuthStateChange((event, session) => {
-            console.log('Auth state changed:', event, session ? !!session.user : null);
-            
-            if (event === 'SIGNED_IN' && session && session.user) {
-                showGameContainer(session.user);
-            } else if (event === 'SIGNED_OUT') {
-                currentUser = null;
-                if (gameContainer && authContainer) {
-                    gameContainer.classList.add('hidden');
-                    authContainer.classList.remove('hidden');
+        if (supabase && supabase.auth) {
+            supabase.auth.onAuthStateChange((event, session) => {
+                console.log('Auth state changed:', event, session ? !!session.user : null);
+                
+                if (event === 'SIGNED_IN' && session && session.user) {
+                    showGameContainer(session.user);
+                } else if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    if (gameContainer && authContainer) {
+                        gameContainer.classList.add('hidden');
+                        authContainer.classList.remove('hidden');
+                    }
                 }
-            }
-        });
+            });
+        } else {
+            console.warn('Supabase auth not available for auth state change listener');
+        }
 
         // Initialize event listeners
         initEventListeners();
@@ -339,11 +387,13 @@ async function initAuth() {
     }
 }
 
-// Initialize when DOM is loaded
+// Initialize when DOM is fully loaded using a safer approach
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAuth);
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(initAuth, 100); // Small delay to ensure everything is loaded
+    });
 } else {
-    initAuth();
+    setTimeout(initAuth, 100); // Small delay to ensure everything is loaded
 }
 
 // Export necessary functions

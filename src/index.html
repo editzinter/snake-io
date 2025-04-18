@@ -9,39 +9,6 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!-- Debug script to capture errors -->
     <script src="./js/debug.js"></script>
-    <script>
-        // Globally available direct function to play as guest
-        function directPlayAsGuest() {
-            console.log('Direct play as guest function called');
-            var authContainer = document.getElementById('auth-container');
-            var gameContainer = document.getElementById('game-container');
-            
-            if (authContainer && gameContainer) {
-                authContainer.classList.add('hidden');
-                gameContainer.classList.remove('hidden');
-                console.log('Game container shown and auth hidden via direct function');
-            } else {
-                console.error('Could not find containers:', 
-                             authContainer ? 'auth found' : 'auth missing', 
-                             gameContainer ? 'game found' : 'game missing');
-            }
-            return false; // Prevent default form submission
-        }
-        
-        // Backup function that runs when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Setting up guest play fallback handler');
-            var guestPlayBtn = document.getElementById('playAsGuest');
-            if (guestPlayBtn) {
-                guestPlayBtn.onclick = function(e) {
-                    if (e) e.preventDefault();
-                    console.log('Guest play clicked (DOM loaded handler)');
-                    directPlayAsGuest();
-                    return false;
-                };
-            }
-        });
-    </script>
 </head>
 <body>
     <div id="auth-container">
@@ -92,5 +59,30 @@
     <script src="./js/supabase.js" type="module"></script>
     <script src="./js/auth.js" type="module"></script>
     <script src="./js/game.js" type="module"></script>
+
+    <!-- Non-module script for direct guest play as a fallback -->
+    <script>
+        // Wait for all modules to load, then apply a direct event listener as a fallback
+        window.addEventListener('load', function() {
+            console.log('Window loaded, applying direct guest play fallback');
+            const guestButton = document.getElementById('playAsGuest');
+            if (guestButton) {
+                guestButton.addEventListener('click', function(e) {
+                    console.log('Guest play clicked (direct fallback handler)');
+                    const authContainer = document.getElementById('auth-container');
+                    const gameContainer = document.getElementById('game-container');
+                    
+                    if (authContainer && gameContainer) {
+                        authContainer.classList.add('hidden');
+                        gameContainer.classList.remove('hidden');
+                        console.log('Game container shown via direct fallback');
+                    }
+                    
+                    if (e) e.preventDefault();
+                    return false;
+                });
+            }
+        });
+    </script>
 </body>
 </html> 
