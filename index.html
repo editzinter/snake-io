@@ -677,87 +677,14 @@
             
             const hash = window.location.hash;
             // If hash contains access token, user has signed in with Google
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-                        email: data.email,
-                        id: data.sub,
-                        picture: data.picture
-                    };
-                    
-                    console.log("Logged in as:", currentUser.name);
-                    
-                    // Set player name from Google account
-                    playerNameInput.value = data.name || data.email.split("@")[0];
-                    
-                    // Start game as authenticated user
-                    authContainer.style.display = "none";
-                    gameContainer.style.display = "block";
-                .catch(error => {
-                    console.error("Error fetching user info:", error);
-                    // Fallback to guest mode if there is an error
-                    window.location.hash = "";
-                    startAsGuest();
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
-.then(response => response.json())
-                .then(data => {
-                    // Clear hash from URL
-                    window.location.hash = '';
-                    
-                    // Store user info
-                    currentUser = {
-                        name: data.name,
+            if (hash && hash.includes('access_token')) {
+                // Extract the access token
+                const accessToken = hash.match(/access_token=([^&]*)/)[1];
+                
+                // Get user info using the token
+                fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                })
                 .then(response => response.json())
                 .then(data => {
                     // Clear hash from URL
