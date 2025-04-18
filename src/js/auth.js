@@ -63,10 +63,13 @@ async function signInWithGoogle() {
     try {
         showAuthMessage('Connecting to Google...');
         
+        // Always use the Netlify URL for redirects, regardless of where the app is running
+        const redirectUrl = 'https://snake-io-editzinter.netlify.app';
+        
         const { data, error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin || 'https://snake-io-editzinter.netlify.app'
+                redirectTo: redirectUrl
             }
         });
 
